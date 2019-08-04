@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+#
+# Copyright (c) 2019 Charlotte Koch. All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#   1. Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+#
+#   2.  Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# =========================================================================
+#
+
+require 'optparse'
+require 'pp'
+
+$LOAD_PATH.unshift File.join(__dir__, "..", "lib")
+require 'reader'
+
+########## ########## ########## ##########
+
+PROGNAME = File.basename($0)
+
+want_json = false
+want_ruby = false
+
+parser = OptionParser.new do |opts|
+  opts.banner = "usage: #{PROGNAME} [options] script-file"
+  opts.on("--json", "Output data in JSON format") { want_json = true }
+  opts.on("--ruby", "Output Ruby 'inspect' format") { want_ruby = true }
+end
+
+parser.parse!(ARGV)
+
+file = ARGV.shift
+
+if not file 
+  $stderr.puts("#{PROGNAME}: expected a file")
+  $stderr.puts(parser.to_s)
+  exit 1
+end
+
+file = File.expand_path(file)
+
+if not File.file?(file)
+  $stderr.puts("#{PROGNAME}: no such file #{file.inspect}")
+end
+
+reader = ScriptReader.new(file)
+at_exit { reader.close }
+reader.interpret
+
+if want_json
+  puts JSON.dump(reader.lines.map { |line| line.map { |instruction| instruction.to_h }})
+elsif want_ruby
+  reader.lines.each { |line| p line; puts; }
+else
+  reader.lines.each { |line|
+    line.select { |bit| bit.kind_of?(Dialogue) }.each { |d| print d.text }
+    puts; puts;
+  }
+end
