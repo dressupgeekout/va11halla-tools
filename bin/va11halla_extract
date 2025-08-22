@@ -100,9 +100,14 @@ def read_ushort(fd)
   return fd.read(2).unpack('S<')[0]
 end
 
+alias read_ushortle read_ushort
+
 def read_uint(fd)
   return fd.read(4).unpack('L<')[0]
 end
+
+alias read_uint32 read_uint
+alias read_uint32le read_uint
 
 def read_chars(fd, length)
   return fd.read(length)
