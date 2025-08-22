@@ -400,7 +400,7 @@ $sond_filenames = []
 while f.tell < total_length
   chunk_name = read_chars(f, 4)
   section_length = read_uint(f)
-  puts("#{chunk_name}\t#{section_length}B == #{section_length/1024.0}KB")
+  puts("#{chunk_name}\t#{section_length}B == #{section_length/1024}KB")
   section_end = f.tell() + section_length
 
   case chunk_name
