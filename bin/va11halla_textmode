@@ -31,7 +31,7 @@
 require 'optparse'
 
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
-require 'reader'
+require 'va11halla/reader'
 
 ########## ########## ########## ##########
 
