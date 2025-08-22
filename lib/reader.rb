@@ -31,156 +31,158 @@
 
 require 'json'
 
-class Instruction < Struct.new(:name, :params)
-  def to_h
-    return {
-      "type" => "instruction",
-      "name" => self.name,
-      "params" => self.params,
-    }
+module Va11halla
+  class Instruction < Struct.new(:name, :params)
+    def to_h
+      return {
+        "type" => "instruction",
+        "name" => self.name,
+        "params" => self.params,
+      }
+    end
+
+    def to_json
+      return JSON.dump(self.to_h)
+    end
   end
 
-  def to_json
-    return JSON.dump(self.to_h)
-  end
-end
+  class Dialogue < Struct.new(:text)
+    def to_h
+      return {
+        "type" => "dialogue",
+        "text" => self.text,
+      }
+    end
 
-class Dialogue < Struct.new(:text)
-  def to_h
-    return {
-      "type" => "dialogue",
-      "text" => self.text,
-    }
-  end
-
-  def to_json
-    return JSON.dump(self.to_h)
-  end
-end
-
-class LineInterpreter
-  attr_reader :mode
-  attr_reader :raw
-  attr_reader :instructions
-
-  def initialize(raw)
-    @mode = nil
-    @raw = raw
-    @instructions = []
+    def to_json
+      return JSON.dump(self.to_h)
+    end
   end
 
-  def interpret
-    this_meta_name = nil
-    this_meta_params = []
-    this_meta_params_i = 0
-    dialogue = ""
+  class LineInterpreter
+    attr_reader :mode
+    attr_reader :raw
+    attr_reader :instructions
 
-    @raw.split("").each do |char|
-      case char
-      when "["
-        if not @mode and !dialogue.empty?
-          @instructions << Dialogue.new(dialogue)
-          dialogue = ""
-        end
-        @mode = :meta_open
-        this_meta_name = ""
-      when "]"
-        if @mode == :meta_params
-          @mode = nil
-          @instructions << Instruction.new(this_meta_name, this_meta_params)
-          this_meta_name = nil
-          this_meta_params = []
-          this_meta_params_i = 0
-        end
-      when ":"
-        if @mode == :meta_open
-          @mode = :meta_params
+    def initialize(raw)
+      @mode = nil
+      @raw = raw
+      @instructions = []
+    end
+
+    def interpret
+      this_meta_name = nil
+      this_meta_params = []
+      this_meta_params_i = 0
+      dialogue = ""
+
+      @raw.split("").each do |char|
+        case char
+        when "["
+          if not @mode and !dialogue.empty?
+            @instructions << Dialogue.new(dialogue)
+            dialogue = ""
+          end
+          @mode = :meta_open
+          this_meta_name = ""
+        when "]"
+          if @mode == :meta_params
+            @mode = nil
+            @instructions << Instruction.new(this_meta_name, this_meta_params)
+            this_meta_name = nil
+            this_meta_params = []
+            this_meta_params_i = 0
+          end
+        when ":"
+          if @mode == :meta_open
+            @mode = :meta_params
+          else
+            dialogue += char
+          end
+        when ","
+          if @mode == :meta_params
+            this_meta_params_i += 1
+          else
+            dialogue += char
+          end
+        when "#"
+          dialogue += "\n"
+        when "\n"
+          break
+        when "\r"
+          # IGNORE
         else
-          dialogue += char
-        end
-      when ","
-        if @mode == :meta_params
-          this_meta_params_i += 1
-        else
-          dialogue += char
-        end
-      when "#"
-        dialogue += "\n"
-      when "\n"
-        break
-      when "\r"
-        # IGNORE
-      else
-        # Unhandled character, probably a letter or insignificant
-        # punctuation mark.
-        case @mode
-        when :meta_open
-          this_meta_name += char 
-        when :meta_params
-          this_meta_params[this_meta_params_i] ||= ""
-          this_meta_params[this_meta_params_i] += char
-        else
-          dialogue += char
+          # Unhandled character, probably a letter or insignificant
+          # punctuation mark.
+          case @mode
+          when :meta_open
+            this_meta_name += char 
+          when :meta_params
+            this_meta_params[this_meta_params_i] ||= ""
+            this_meta_params[this_meta_params_i] += char
+          else
+            dialogue += char
+          end
         end
       end
+
+      return @instructions
+    end
+  end
+
+  class Line
+    attr_reader :raw
+    attr_reader :instructions
+
+    def initialize(raw)
+      @raw = raw
+      @instructions = []
     end
 
-    return @instructions
-  end
-end
-
-class Line
-  attr_reader :raw
-  attr_reader :instructions
-
-  def initialize(raw)
-    @raw = raw
-    @instructions = []
+    def interpret
+      return @instructions if @instructions.any?
+      @instructions = LineInterpreter.new(@raw).interpret
+      return @instructions
+    end
   end
 
-  def interpret
-    return @instructions if @instructions.any?
-    @instructions = LineInterpreter.new(@raw).interpret
-    return @instructions
-  end
-end
-
-class MagicError < RuntimeError
-end
-
-class ScriptReader
-  attr_reader :path
-  attr_accessor :file
-  attr_reader :lines
-
-  MAGIC = [239, 187, 191].freeze
-
-  def initialize(path)
-    @path = path
-    @file = File.open(path, "r")
-    @lines = []
+  class MagicError < RuntimeError
   end
 
-  def interpret
-    magic = @file.read(3).unpack("C*")
+  class ScriptReader
+    attr_reader :path
+    attr_accessor :file
+    attr_reader :lines
 
-    if magic != MAGIC
-      raise(MagicError, "Unknown magic: #{magic.inspect} -- was expecting #{MAGIC.inspect}")
+    MAGIC = [239, 187, 191].freeze
+
+    def initialize(path)
+      @path = path
+      @file = File.open(path, "r")
+      @lines = []
     end
 
-    until @file.eof?
-      line_str = @file.gets
-      @lines << Line.new(line_str).interpret
+    def interpret
+      magic = @file.read(3).unpack("C*")
+
+      if magic != MAGIC
+        raise(MagicError, "Unknown magic: #{magic.inspect} -- was expecting #{MAGIC.inspect}")
+      end
+
+      until @file.eof?
+        line_str = @file.gets
+        @lines << Line.new(line_str).interpret
+      end
+
+      return true
     end
 
-    return true
-  end
+    def to_json
+      JSON.dump(@lines.map { |line| line.instructions })
+    end
 
-  def to_json
-    JSON.dump(@lines.map { |line| line.instructions })
-  end
-
-  def close
-    @file.close
+    def close
+      @file.close
+    end
   end
 end

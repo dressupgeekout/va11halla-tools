@@ -63,7 +63,7 @@ if not File.file?(file)
   $stderr.puts("#{PROGNAME}: no such file #{file.inspect}")
 end
 
-reader = ScriptReader.new(file)
+reader = Va11halla::ScriptReader.new(file)
 at_exit { reader.close }
 reader.interpret
 
@@ -73,7 +73,7 @@ elsif want_ruby
   reader.lines.each { |line| p line; puts; }
 else
   reader.lines.each { |line|
-    line.select { |bit| bit.kind_of?(Dialogue) }.each { |d| print d.text }
+    line.select { |bit| bit.kind_of?(Va11halla::Dialogue) }.each { |d| print d.text }
     puts; puts;
   }
 end

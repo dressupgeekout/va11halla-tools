@@ -59,16 +59,16 @@ if not File.directory?(scripts_dir)
   exit 1
 end
 
-script = ScriptReader.new(File.join(scripts_dir, "script2.txt"))
+script = Va11halla::ScriptReader.new(File.join(scripts_dir, "script2.txt"))
 script.interpret
 
 script.lines.each do |line|
   $stdout.puts
 
   line.each do |directive|
-    if directive.kind_of?(Instruction)
+    if directive.kind_of?(Va11halla::Instruction)
       next
-    elsif directive.kind_of?(Dialogue)
+    elsif directive.kind_of?(Va11halla::Dialogue)
       $stdout.print(directive.text)
     end
   end
