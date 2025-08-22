@@ -31,7 +31,7 @@
 require 'optparse'
 
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
-require 'va11halla/reader'
+require 'va11halla'
 
 ########## ########## ########## ##########
 
@@ -40,13 +40,20 @@ PROGNAME = File.basename($0)
 scripts_dir = nil
 resource_file = nil
 colors = !ENV["NO_COLOR"]
+want_version = false
 
 parser = OptionParser.new do |opts|
   opts.on("--scripts-dir DIRECTORY") { |path| scripts_dir = File.expand_path(path) }
   opts.on("--no-color", "Plain text output") { colors = false }
+  opts.on("--version", "Show version information") { want_version = true }
 end
 
 parser.parse!(ARGV)
+
+if want_version
+  puts "#{PROGNAME} #{Va11halla::VERSION}"
+  exit 0
+end
 
 if !scripts_dir
   $stderr.puts("#{PROGNAME}: expected a scripts directory")

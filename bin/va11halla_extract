@@ -41,6 +41,9 @@
 
 require 'optparse'
 
+$LOAD_PATH.unshift File.join(__dir__, "..", "lib")
+require 'va11halla'
+
 PROGNAME = File.basename($0)
 
 ########## ########## ##########
@@ -48,6 +51,7 @@ PROGNAME = File.basename($0)
 $extract = true
 $specific_chunk = nil
 $debug = false # different from $DEBUG
+$want_version = false
 
 parser = OptionParser.new do |opts|
   opts.banner = "usage: #{PROGNAME} [options] data-file"
@@ -55,9 +59,15 @@ parser = OptionParser.new do |opts|
   opts.on("--chunk NAME", "Operate only on the given chunk") { |name| $specific_chunk = name }
   opts.on("-d", "--debug") { $debug = true }
   opts.on("-h", "--help", "Show this help message") { puts opts.to_s; exit 0 }
+  opts.on("--version", "Show version information") { $want_version = true }
 end
 
 parser.parse!(ARGV)
+
+if $want_version
+  puts "#{PROGNAME} #{Va11halla::VERSION}"
+  exit 0
+end
 
 path = ARGV.shift
 

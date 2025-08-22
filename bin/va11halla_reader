@@ -32,7 +32,7 @@ require 'optparse'
 require 'pp'
 
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
-require 'va11halla/reader'
+require 'va11halla'
 
 ########## ########## ########## ##########
 
@@ -40,14 +40,21 @@ PROGNAME = File.basename($0)
 
 want_json = false
 want_ruby = false
+want_version = false
 
 parser = OptionParser.new do |opts|
   opts.banner = "usage: #{PROGNAME} [options] script-file"
   opts.on("--json", "Output data in JSON format") { want_json = true }
   opts.on("--ruby", "Output Ruby 'inspect' format") { want_ruby = true }
+  opts.on("--version", "Show version information") { want_version = true }
 end
 
 parser.parse!(ARGV)
+
+if want_version
+  puts("#{PROGNAME} #{Va11halla::VERSION}")
+  exit 0
+end
 
 file = ARGV.shift
 
