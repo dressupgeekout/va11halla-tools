@@ -67,6 +67,7 @@ if not File.directory?(scripts_dir)
 end
 
 script = Va11halla::ScriptReader.new(File.join(scripts_dir, "script2.txt"))
+at_exit { script.close }
 script.interpret
 
 script.lines.each do |line|
