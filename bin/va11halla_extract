@@ -52,6 +52,7 @@ $extract = true
 $specific_chunk = nil
 $debug = false # different from $DEBUG
 $want_version = false
+$outdir = File.expand_path(".")
 
 parser = OptionParser.new do |opts|
   opts.banner = "usage: #{PROGNAME} [options] data-file"
@@ -59,6 +60,9 @@ parser = OptionParser.new do |opts|
   opts.on("--chunk NAME", "Operate only on the given chunk") { |name| $specific_chunk = name }
   opts.on("-d", "--debug") { $debug = true }
   opts.on("-h", "--help", "Show this help message") { puts opts.to_s; exit 0 }
+  opts.on("-o", "--output-dir PATH", "Location to extract files") { |dir|
+    $outdir = File.expand_path(dir)
+  }
   opts.on("--version", "Show version information") { $want_version = true }
 end
 
@@ -80,6 +84,13 @@ path = File.expand_path(path)
 
 if not File.file?(path)
   $stderr.puts("#{PROGNAME}: no such file #{path.inspect}")
+  exit 1
+end
+
+begin
+  Dir.chdir($outdir)
+rescue Errno::ENOENT => err
+  $stderr.puts("#{PROGNAME}: could not change into output directory: #{err}")
   exit 1
 end
 
