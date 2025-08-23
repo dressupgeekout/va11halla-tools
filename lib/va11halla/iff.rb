@@ -333,15 +333,15 @@ module Va11halla
 
       p real_offsets if @debug
 
-      fontinfo_klass = Struct.new(:i, :varname, :name, :ptsize, :b, :c, :d, :e) do
+      fontinfo_klass = Struct.new(:index, :varname, :name, :ptsize, :b, :c, :d, :e) do
         def to_s
-          return ("FONT %d\t%s\t%s\t%d\t%d\t%d\t%d\t%d" % [i, varname, name, ptsize, b, c, d, e])
+          return ("FONT %d\t%s\t%s\t%d pt\t%d\t%d\t%d\t%d" % [index, varname, name, ptsize, b, c, d, e])
         end
       end
 
       real_offsets.each_with_index do |offset, i|
         fi = fontinfo_klass.new
-        fi.i = i
+        fi.index = i
 
         @fp.seek(offset)
         varname_loc = read_uint
