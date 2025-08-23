@@ -61,6 +61,7 @@ module Va11halla
     attr_reader :sond_filenames
     attr_reader :font_infos
     attr_reader :sond_infos
+    attr_reader :sprt_infos
     attr_reader :sond_count
     attr_reader :agrp_count
     attr_reader :sprt_count
@@ -247,6 +248,7 @@ module Va11halla
     # The SPRT chunk.
     def sprt(section_end)
       @sprt_count = read_uint
+      @sprt_infos = Array.new(@sprt_count)
       real_offsets = []
 
       (0...@sprt_count).each do |i|
@@ -256,43 +258,61 @@ module Va11halla
 
       p real_offsets if @debug
 
+      sprtframe_klass = Struct.new(:index, :n_sheet, :ary) do
+        def to_s
+          return ("\\ frame %d @ sheet #%d\t%s" % [index, n_sheet, ary.inspect])
+        end
+      end
+
+      sprtinfo_klass = Struct.new(:index, :x, :name, :w, :h, :a, :b, :nframes, :frames) do
+        def to_s
+          return ("SPRT %d\t%d\t%s -> %dx%d -> %dx%d\t%d" % [index, x, name, w, h, a, b, nframes])
+        end
+      end
+
       real_offsets.each_with_index do |offset, i|
+        si = sprtinfo_klass.new
+        si.index = i
+
         @fp.seek(offset)
         name_loc = read_uint
-        w = read_uint
-        h = read_uint
-        x = read_uint # always 7?
-        a = read_uint
-        b = read_uint
+        si.w = read_uint
+        si.h = read_uint
+        si.x = read_uint
+        si.a = read_uint
+        si.b = read_uint
 
         8.times { read_uint } # 8 zeroes
 
         nframes = read_uint
+        si.nframes = nframes
         frames = []
 
         nframes.times do |j|
           frame = read_uint
           frames[j] = frame
         end
+        si.frames = frames
 
         @fp.seek(name_loc-4)
         namelen = read_uint
-        name = read_chars(namelen)
-
-        puts("SPRT %d\t%d\t%s -> %dx%d -> %dx%d\t%d - %s" % [i, x, name, w, h, a, b, nframes, frames.inspect])
+        si.name = read_chars(namelen)
 
         (0...nframes).each do |j|
+          sf = sprtframe_klass.new
+          sf.index = j
           @fp.seek(frames[j]-2)
-          n_sheet = read_ushort
+          sf.n_sheet = read_ushort
           ary = []
           (0...10).each do |i|
             n = read_ushort
             ary[i] = n
           end
-          puts("\\ frame %d @ sheet #%d\t%s" % [j, n_sheet, ary.inspect])
+          sf.ary = ary
+          si.frames[j] = sf
         end
 
-        puts("")
+        @sprt_infos[i] = si
       end
     end
 

@@ -125,4 +125,15 @@ if debug
   data.sond_infos.each do |si|
     puts("  #{si}")
   end
+
+  puts
+
+  puts "Sprt infos:"
+  data.sprt_infos.each do |si|
+    puts("  #{si}")
+    si.frames.each do |frame|
+      puts("    #{frame}")
+    end
+    puts
+  end
 end
