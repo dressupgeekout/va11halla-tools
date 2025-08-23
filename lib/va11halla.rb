@@ -25,6 +25,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+require_relative 'va11halla/iff'
 require_relative 'va11halla/reader'
 
 module Va11halla

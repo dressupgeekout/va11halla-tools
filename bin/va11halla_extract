@@ -25,19 +25,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# =========================================================================
-#
-# va11halla_extract: VA-11 Hall-A data extractor tool
-#
-# Thanks to svanheulen, who wrote the original Gist that got me a head
-# start:
-#
-#     https://gist.github.com/svanheulen/15d7b56ba64fd7d826ac23ad879b4e92
-#
-# I also learned a few things from the Undertale modding folks:
-#
-#     https://github.com/krzys-h/UndertaleModTool
-#
 
 require 'optparse'
 
@@ -48,27 +35,27 @@ PROGNAME = File.basename($0)
 
 ########## ########## ##########
 
-$extract = true
-$specific_chunk = nil
-$debug = false # different from $DEBUG
-$want_version = false
-$outdir = File.expand_path(".")
+extract = true
+specific_chunk = nil
+debug = false
+want_version = false
+outdir = File.expand_path(".")
 
 parser = OptionParser.new do |opts|
   opts.banner = "usage: #{PROGNAME} [options] data-file"
-  opts.on("--no-extract", "Don't extract any files, only list info") { $extract = false }
-  opts.on("--chunk NAME", "Operate only on the given chunk") { |name| $specific_chunk = name }
-  opts.on("-d", "--debug") { $debug = true }
+  opts.on("--no-extract", "Don't extract any files, only list info") { extract = false }
+  opts.on("--chunk NAME", "Operate only on the given chunk") { |name| specific_chunk = name }
+  opts.on("-d", "--debug") { debug = true }
   opts.on("-h", "--help", "Show this help message") { puts opts.to_s; exit 0 }
   opts.on("-o", "--output-dir PATH", "Location to extract files") { |dir|
-    $outdir = File.expand_path(dir)
+    outdir = File.expand_path(dir)
   }
-  opts.on("--version", "Show version information") { $want_version = true }
+  opts.on("--version", "Show version information") { want_version = true }
 end
 
 parser.parse!(ARGV)
 
-if $want_version
+if want_version
   puts "#{PROGNAME} #{Va11halla::VERSION}"
   exit 0
 end
@@ -88,370 +75,33 @@ if not File.file?(path)
 end
 
 begin
-  Dir.chdir($outdir)
+  Dir.chdir(outdir)
 rescue Errno::ENOENT => err
   $stderr.puts("#{PROGNAME}: could not change into output directory: #{err}")
   exit 1
 end
 
-########## ########## ##########
+data = Va11halla::IFF.new(path)
+data.open
 
-def read_ushort(fd)
-  return fd.read(2).unpack('S<')[0]
+data.parse(**{
+  :specific_chunk => specific_chunk,
+  :extract => extract,
+  :debug => debug,
+})
+
+if debug
+  puts "Total length: #{data.total_length}"
 end
 
-alias read_ushortle read_ushort
+data.close
 
-def read_uint(fd)
-  return fd.read(4).unpack('L<')[0]
-end
+if debug
+  p data
+  2.times { puts }
 
-alias read_uint32 read_uint
-alias read_uint32le read_uint
-
-def read_chars(fd, length)
-  return fd.read(length)
-end
-
-########## ########## ##########
-
-def sond(f)
-  count = read_uint(f)
-  puts("number of SONDs: #{count}")
-  real_offsets = []
-
-  (0...count).each do |i|
-    real_offset = read_uint(f)
-    real_offsets[i] = real_offset
+  puts "Chunk counts:"
+  data.chunk_counts.each do |name, count|
+    puts "  #{name} #{count}"
   end
-
-  p real_offsets if $debug
-
-  real_offsets.each_with_index do |offset, i|
-    f.seek(offset)
-    name_loc = read_uint(f)
-    x = read_uint(f) # not sure what this is
-    extname_loc = read_uint(f)
-    filename_loc = read_uint(f)
-    read_uint(f) # zero?
-    a = read_uint(f)
-    2.times { read_uint(f) } # zeroes?
-    index = read_uint(f)
-
-    f.seek(name_loc-4)
-    namelen = read_uint(f)
-    name = read_chars(f, namelen)
-
-    f.seek(extname_loc-4)
-    extname_len = read_uint(f)
-    extname = read_chars(f, extname_len)
-
-    f.seek(filename_loc-4)
-    filename_len = read_uint(f)
-    filename = read_chars(f, filename_len)
-
-    puts("SOND %d\t%d\t%s\t%d\t%s\t%s" % [x, a, extname, index, name, filename])
-    if $extract
-      $sond_filenames[i] = filename
-    end
-  end
-end
-
-def agrp(f)
-  count = read_uint(f)
-  puts("number of AGRPs: #{count}")
-  real_offsets = []
-
-  (0...count).each do |i|
-    real_offset = read_uint(f)
-    real_offsets[i] = real_offset
-  end
-
-  real_offsets.each do |offset|
-    f.seek(offset)
-    name_loc = read_uint(f)
-    f.seek(name_loc-4)
-    name_len = read_uint(f)
-    name = read_chars(f, name_len)
-    puts("\tAGRP #{name}")
-  end
-end
-
-def sprt(f, section_end)
-  count = read_uint(f)
-  puts("number of SPRTs: %d" % [count,])
-  real_offsets = []
-
-  (0...count).each do |i|
-    real_offset = read_uint(f)
-    real_offsets[i] = real_offset
-  end
-
-  p real_offsets if $debug
-
-  real_offsets.each_with_index do |offset, i|
-    f.seek(offset)
-    name_loc = read_uint(f)
-    w = read_uint(f)
-    h = read_uint(f)
-    x = read_uint(f) # always 7?
-    a = read_uint(f)
-    b = read_uint(f)
-
-    8.times { read_uint(f) } # 8 zeroes
-
-    nframes = read_uint(f)
-    frames = []
-
-    nframes.times do |j|
-      frame = read_uint(f)
-      frames[j] = frame
-    end
-
-=begin
-    if $extract
-      read_uint(f) # 1?
-
-      if i == real_offsets.length-1
-        the_end = section_end
-      else
-        the_end = real_offsets[i+1]
-      end
-
-      data = f.read(the_end - f.tell)
-      puts("CHARLOTTE\t#{data.length}\t#{w}\t#{h}")
-      fname = sprintf("SPRT_%03d.sprt", i)
-      puts("writing #{fname}")
-      File.open(fname, "wb") { |sprt_fd| sprt_fd.write(data) }
-    end
-=end
-
-    f.seek(name_loc-4)
-    namelen = read_uint(f)
-    name = read_chars(f, namelen)
-
-    puts("SPRT %d\t%d\t%s -> %dx%d -> %dx%d\t%d - %s" % [i, x, name, w, h, a, b, nframes, frames.inspect])
-
-    (0...nframes).each do |j|
-      f.seek(frames[j]-2)
-      n_sheet = read_ushort(f)
-      ary = []
-      (0...10).each do |i|
-        n = read_ushort(f)
-        ary[i] = n
-      end
-      puts("\\ frame %d @ sheet #%d\t%s" % [j, n_sheet, ary.inspect])
-    end
-
-    puts("")
-  end
-end
-
-def scpt(f)
-  count = read_uint(f)
-  puts("number of SCPTs: #{count}")
-end
-
-def font(f)
-  count = read_uint(f)
-  puts("number of FONTs: #{count}")
-  real_offsets = []
-
-  (0...count).each do |i|
-    real_offset = read_uint(f)
-    real_offsets[i] = real_offset
-  end
-
-  p real_offsets if $debug
-
-  real_offsets.each_with_index do |offset, i|
-    f.seek(offset)
-    varname_loc = read_uint(f)
-    name_loc = read_uint(f)
-    ptsize = read_uint(f)
-    read_uint(f) # blank 1?
-    read_uint(f) # blank 2?
-    b = read_ushort(f)
-    c = read_ushort(f)
-    d = read_ushort(f)
-    e = read_ushort(f)
-
-    f.seek(varname_loc-4)
-    varname_len = read_uint(f)
-    varname = read_chars(f, varname_len)
-
-    f.seek(name_loc-4)
-    name_len = read_uint(f)
-    name = read_chars(f, name_len)
-
-    puts("FONT %d\t%s\t%s\t%d\t%d\t%d\t%d\t%d" % [i, varname, name, ptsize, b, c, d, e])
-  end
-end
-
-def code(f)
-  count = read_uint(f)
-  puts("number of CODEs: #{count}")
-end
-
-def vari(f)
-  count = read_uint(f)
-  puts("number of VARIs: #{count}")
-end
-
-def func(f)
-  count = read_uint(f)
-  puts("number of FUNCs: #{count}")
-end
-
-def strg(f)
-  count = read_uint(f)
-  puts("number of STRGs: #{count}")
-  real_offsets = []
-
-  # XXX We're making an enormous array like this
-  (0...count).each do |i|
-    real_offset = read_uint(f)
-    real_offsets[i] = real_offset
-  end
-
-  if $extract
-    real_offsets.each do |real_offset|
-      f.seek(real_offset)
-      strlen = read_uint(f)
-      the_str = read_chars(f, strlen)
-      f.read(1) # terminating NUL
-      puts(">> " + the_str.inspect)
-    end
-  end
-end
-
-def txtr(f, section_end)
-  count = read_uint(f)
-  puts("number of TXTRs: #{count}")
-  pre_offsets = f.read(4*count).unpack("L*")
-  p pre_offsets if $debug
-  f.read(4) # zeroes?
-
-  real_offsets = pre_offsets.map do |pre_offset|
-    f.seek(pre_offset)
-    _, real_offset = f.read(8).unpack('L*')
-    real_offset
-  end
-
-  p real_offsets if $debug
-
-  # XXX but where are the TXTR lengths, really?
-  # According to this, there might not even *be* lengths included:
-  # --> https://github.com/krzys-h/UndertaleModTool/wiki/Corrections-to-Game-Maker:-Studio-1.4-data.win-format-and-VM-bytecode,-.yydebug-format-and-debugger-instructions
-  if $extract
-    (0...(real_offsets.length-1)).each do |i|
-      f.seek(real_offsets[i])
-      size = real_offsets[i+1] - f.tell()
-      fname = sprintf("TXTR_%03d.png", i)
-      puts("writing #{fname}")
-      File.open(fname, 'wb') { |txtr| txtr.write(f.read(size)) }
-    end
-
-    # I guess we have to treat the last txtr specially:
-    f.seek(real_offsets[real_offsets.length-1])
-    size = section_end - f.tell()
-    File.open(sprintf('TXTR_%03d.png', real_offsets.length-1), 'wb') { |txtr| txtr.write(f.read(size)) }
-  end
-end
-
-def audo(f)
-  count = read_uint(f)
-  puts("number of AUDOs: #{count}")
-  offsets = f.read(count*4).unpack("L*")
-  p offsets if $debug
-
-  if $extract
-    offsets.each_with_index do |offset, i|
-      f.seek(offset)
-      size = read_uint(f)
-      puts("writing " + $sond_filenames[i])
-      File.open($sond_filenames[i], 'wb') { |audo| audo.write(f.read(size)) }
-    end
-  end
-end
-
-########## ########## ##########
-
-f = File.open(path, "r")
-at_exit { f.close }
-
-magic_number = read_chars(f, 4)
-
-if magic_number != "FORM"
-  raise(RuntimeError, "Missing initial FORM chunk")
-  exit 1
-end
-
-total_length = read_uint(f)
-
-if $debug
-  puts(magic_number)
-  puts(total_length)
-  puts("==========")
-end
-
-$sond_filenames = []
-
-while f.tell < total_length
-  chunk_name = read_chars(f, 4)
-  section_length = read_uint(f)
-  puts("#{chunk_name}\t#{section_length}B == #{section_length/1024}KB")
-  section_end = f.tell() + section_length
-
-  case chunk_name
-  when "GEN8"
-    # XXX
-  when "OPTN"
-    # XXX
-  when "EXTN"
-    # XXX
-  when "BGND"
-    # XXX
-  when "PATH"
-    # XXX
-  when "SHDR"
-    # XXX
-  when "TMLN"
-    # XXX
-  when "OBJT"
-    # XXX
-  when "ROOM"
-    # XXX
-  when "DAFL"
-    # XXX
-  when "TPAG"
-    # XXX
-  when "SOND"
-    sond(f) if (($specific_chunk && $specific_chunk == "SOND") || !$specific_chunk)
-  when "AGRP"
-    agrp(f) if (($specific_chunk && $specific_chunk == "AGRP") || !$specific_chunk)
-  when "SPRT"
-    sprt(f, section_end) if (($specific_chunk && $specific_chunk == "SPRT") || !$specific_chunk)
-  when "SCPT"
-    scpt(f) if (($specific_chunk && $specific_chunk == "SCPT") || !$specific_chunk)
-  when "FONT"
-    font(f) if (($specific_chunk && $specific_chunk == "FONT") || !$specific_chunk)
-  when "CODE"
-    code(f) if (($specific_chunk && $specific_chunk == "CODE") || !$specific_chunk)
-  when "VARI"
-    vari(f) if (($specific_chunk && $specific_chunk == "VARI") || !$specific_chunk)
-  when "FUNC"
-    func(f) if (($specific_chunk && $specific_chunk == "FUNC") || !$specific_chunk)
-  when "STRG"
-    strg(f) if (($specific_chunk && $specific_chunk == "STRG") || !$specific_chunk)
-  when "TXTR"
-    txtr(f, section_end) if (($specific_chunk && $specific_chunk == "TXTR") || !$specific_chunk)
-  when "AUDO"
-    audo(f) if (($specific_chunk && $specific_chunk == "AUDO") || !$specific_chunk)
-  else
-    raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}")
-  end
-
-  f.seek(section_end)
-  puts("\n==============================\n")
 end
