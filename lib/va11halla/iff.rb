@@ -57,6 +57,7 @@ module Va11halla
 
     # Data that is discovered while parsing the file.
     attr_reader :total_length
+    attr_reader :section_lengths
     attr_reader :sond_filenames
     attr_reader :sond_count
     attr_reader :agrp_count
@@ -106,14 +107,12 @@ module Va11halla
       @total_length = read_uint
 
       @sond_filenames = []
+      @section_lengths = {}
 
       while @fp.tell < @total_length
         chunk_name = read_chars(4)
         section_length = read_uint
-
-        if ((@specific_chunk && @specific_chunk == chunk_name) || !@specific_chunk)
-          puts("#{chunk_name}\t#{section_length}B == #{section_length/1024}KB")
-        end
+        @section_lengths[chunk_name] = section_length
 
         section_end = @fp.tell() + section_length
 

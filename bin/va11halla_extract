@@ -104,4 +104,11 @@ if debug
   data.chunk_counts.each do |name, count|
     puts "  #{name} #{count}"
   end
+
+  puts
+
+  puts "Section lengths:"
+  data.section_lengths.sort_by { |k, v| k }.each do |name, len|
+    puts "  #{name} #{len} B == #{len/1024} KB"
+  end
 end
