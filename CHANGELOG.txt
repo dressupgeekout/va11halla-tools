@@ -1,0 +1,23 @@
+VA-11 Hall-A Tools ChangeLog
+============================
+
+Version 0.1.0 
+-------------
+
+DATE??? 
+
+- Revitalized the project.
+- The code itself is rearranged to match conventional Ruby source layout,
+  including a new namespace `Va11halla`.
+- IFF parsing and resource extraction is now in its own class.
+- STRGs are extracted to a file instead of spamming the standard output.
+
+
+Version 0.0.1
+-------------
+
+July 28, 2022
+
+- Initial release.
+- The tag corresponds to July 2022, but the code itself dates back to August
+  2019.
