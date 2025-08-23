@@ -57,6 +57,7 @@ module Va11halla
 
     # Data that is discovered while parsing the file.
     attr_reader :total_length
+    attr_reader :agrps
     attr_reader :section_lengths
     attr_reader :sond_filenames
     attr_reader :font_infos
@@ -226,8 +227,10 @@ module Va11halla
       end
     end
 
+    # The AGRP chunk seemingly represents the "audio groups."
     def agrp
       @agrp_count = read_uint
+      @agrps = Array.new(@agrp_count)
       real_offsets = []
 
       (0...@agrp_count).each do |i|
@@ -235,13 +238,13 @@ module Va11halla
         real_offsets[i] = real_offset
       end
 
-      real_offsets.each do |offset|
+      real_offsets.each_with_index do |offset, i|
         @fp.seek(offset)
         name_loc = read_uint
         @fp.seek(name_loc-4)
         name_len = read_uint
         name = read_chars(name_len)
-        puts("\tAGRP #{name}")
+        @agrps[i] = name
       end
     end
 
