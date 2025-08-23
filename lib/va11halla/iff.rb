@@ -406,13 +406,13 @@ module Va11halla
     # are spritesheets in PNG format.
     def txtr(section_end)
       @txtr_count = read_uint
-      pre_offsets = @fp.read(4*@txtr_count).unpack("L*")
+      pre_offsets = @fp.read(4*@txtr_count).unpack("L<*")
       p pre_offsets if @debug
       @fp.read(4) # zeroes?
 
       real_offsets = pre_offsets.map do |pre_offset|
         @fp.seek(pre_offset)
-        _, real_offset = @fp.read(8).unpack('L*')
+        _, real_offset = @fp.read(8).unpack('L<*')
         real_offset
       end
 
@@ -442,7 +442,7 @@ module Va11halla
     # an equal number of AUDOs as there are SONDs.
     def audo
       @audo_count = read_uint
-      offsets = @fp.read(@audo_count*4).unpack("L*")
+      offsets = @fp.read(@audo_count*4).unpack("L<*")
       p offsets if @debug
 
       if @extract
