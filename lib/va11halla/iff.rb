@@ -60,6 +60,7 @@ module Va11halla
     attr_reader :section_lengths
     attr_reader :sond_filenames
     attr_reader :font_infos
+    attr_reader :sond_infos
     attr_reader :sond_count
     attr_reader :agrp_count
     attr_reader :sprt_count
@@ -175,6 +176,7 @@ module Va11halla
     # SONDs as there are AUDOs.
     def sond
       @sond_count = read_uint
+      @sond_infos = Array.new(@sond_count)
       real_offsets = []
 
       (0...@sond_count).each do |i|
@@ -184,30 +186,39 @@ module Va11halla
 
       p real_offsets if @debug
 
+      sondinfo_klass = Struct.new(:x, :a, :extname, :index, :name, :filename) do
+        def to_s
+          return ("SOND %d\t%d\t%s\t%d\t%s\t%s" % [x, a, extname, index, name, filename])
+        end
+      end
+
       real_offsets.each_with_index do |offset, i|
+        si = sondinfo_klass.new
+
         @fp.seek(offset)
         name_loc = read_uint
-        x = read_uint # not sure what this is
+        si.x = read_uint # not sure what this is
         extname_loc = read_uint
         filename_loc = read_uint
         read_uint # zero?
-        a = read_uint
+        si.a = read_uint
         2.times { read_uint } # zeroes?
-        index = read_uint
+        si.index = read_uint
 
         @fp.seek(name_loc-4)
         namelen = read_uint
-        name = read_chars(namelen)
+        si.name = read_chars(namelen)
 
         @fp.seek(extname_loc-4)
         extname_len = read_uint
-        extname = read_chars(extname_len)
+        si.extname = read_chars(extname_len)
 
         @fp.seek(filename_loc-4)
         filename_len = read_uint
-        filename = read_chars(filename_len)
+        si.filename = read_chars(filename_len)
 
-        puts("SOND %d\t%d\t%s\t%d\t%s\t%s" % [x, a, extname, index, name, filename])
+        @sond_infos[i] = si
+
         if @extract
           @sond_filenames[i] = filename
         end

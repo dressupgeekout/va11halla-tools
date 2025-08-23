@@ -118,4 +118,11 @@ if debug
   data.font_infos.each do |fi|
     puts("  #{fi}")
   end
+
+  puts
+
+  puts "Sond infos:"
+  data.sond_infos.each do |si|
+    puts("  #{si}")
+  end
 end
