@@ -20,3 +20,9 @@ focus. So, YMMV there.
   rudimentary console version of VA-11 Hall-A. It currently is not suitable
   to be a recreation of the game, since there's no logic handling nor
   anything else, really.
+
+
+## License
+
+The VA-11 Hall-A Tools are released under a permissive BSD-style license.
+Consult the `LICENSE` file for details.
