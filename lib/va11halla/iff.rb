@@ -36,6 +36,8 @@
 #     https://github.com/krzys-h/UndertaleModTool
 #
 
+require 'yaml'
+
 module Va11halla
 
   # This is *not* a general purpose IFF reader. It is optimized specifically
@@ -392,12 +394,20 @@ module Va11halla
       end
 
       if @extract
-        real_offsets.each do |real_offset|
+        strgs = Array.new(@strg_count)
+
+        real_offsets.each_with_index do |real_offset, i|
           @fp.seek(real_offset)
           strlen = read_uint
           the_str = read_chars(strlen)
           @fp.read(1) # terminating NUL
-          puts(">> " + the_str.inspect)
+          strgs[i] = the_str
+        end
+
+        puts "writing STRG.yaml" if @debug
+
+        File.open("STRG.yaml", "w") do |fp|
+          fp.puts(YAML.dump(strgs))
         end
       end
     end
