@@ -222,7 +222,7 @@ module Va11halla
         @sond_infos[i] = si
 
         if @extract
-          @sond_filenames[i] = filename
+          @sond_filenames[i] = si.filename
         end
       end
     end
