@@ -97,9 +97,6 @@ end
 data.close
 
 if debug
-  p data
-  2.times { puts }
-
   puts "Chunk counts:"
   data.chunk_counts.each do |name, count|
     puts "  #{name} #{count}"
