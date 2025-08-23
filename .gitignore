@@ -3,3 +3,4 @@
 .DS_Store
 .ruby-version
 destdir/**
+rdoc/**
