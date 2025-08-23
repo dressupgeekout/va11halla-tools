@@ -59,6 +59,7 @@ module Va11halla
     attr_reader :total_length
     attr_reader :section_lengths
     attr_reader :sond_filenames
+    attr_reader :font_infos
     attr_reader :sond_count
     attr_reader :agrp_count
     attr_reader :sprt_count
@@ -291,6 +292,7 @@ module Va11halla
     # The FONT chunk contains information about fonts.
     def font
       @font_count = read_uint
+      @font_infos = Array.new(@font_count)
       real_offsets = []
 
       (0...@font_count).each do |i|
@@ -300,27 +302,36 @@ module Va11halla
 
       p real_offsets if @debug
 
+      fontinfo_klass = Struct.new(:i, :varname, :name, :ptsize, :b, :c, :d, :e) do
+        def to_s
+          return ("FONT %d\t%s\t%s\t%d\t%d\t%d\t%d\t%d" % [i, varname, name, ptsize, b, c, d, e])
+        end
+      end
+
       real_offsets.each_with_index do |offset, i|
+        fi = fontinfo_klass.new
+        fi.i = i
+
         @fp.seek(offset)
         varname_loc = read_uint
         name_loc = read_uint
-        ptsize = read_uint
-        read_uint # blank 1?
+        fi.ptsize = read_uint
+        read_uint # blank 3?
         read_uint # blank 2?
-        b = read_ushort
-        c = read_ushort
-        d = read_ushort
-        e = read_ushort
+        fi.b = read_ushort
+        fi.c = read_ushort
+        fi.d = read_ushort
+        fi.e = read_ushort
 
         @fp.seek(varname_loc-4)
         varname_len = read_uint
-        varname = read_chars(varname_len)
+        fi.varname = read_chars(varname_len)
 
         @fp.seek(name_loc-4)
         name_len = read_uint
-        name = read_chars(name_len)
+        fi.name = read_chars(name_len)
 
-        puts("FONT %d\t%s\t%s\t%d\t%d\t%d\t%d\t%d" % [i, varname, name, ptsize, b, c, d, e])
+        @font_infos[i] = fi
       end
     end
 

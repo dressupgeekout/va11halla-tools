@@ -111,4 +111,11 @@ if debug
   data.section_lengths.sort_by { |k, v| k }.each do |name, len|
     puts "  #{name} #{len} B == #{len/1024} KB"
   end
+
+  puts
+
+  puts "Font infos:"
+  data.font_infos.each do |fi|
+    puts("  #{fi}")
+  end
 end
