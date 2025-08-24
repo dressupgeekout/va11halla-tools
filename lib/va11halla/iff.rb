@@ -165,7 +165,7 @@ module Va11halla
         when "PATH"
           nil
         when "SHDR"
-          shdr if ((@specific_chunk && @specific_chunk == "SHDR") || !@specific_funk)
+          shdr if ((@specific_chunk == "SHDR") || @specific_chunk.nil?)
         when "TMLN"
           nil
         when "OBJT"
@@ -177,27 +177,27 @@ module Va11halla
         when "TPAG"
           nil
         when "SOND"
-          sond if ((@specific_chunk && @specific_chunk == "SOND") || !@specific_chunk)
+          sond if ((@specific_chunk == "SOND") || @specific_chunk.nil?)
         when "AGRP"
-          agrp if ((@specific_chunk && @specific_chunk == "AGRP") || !@specific_chunk)
+          agrp if ((@specific_chunk == "AGRP") || @specific_chunk.nil?)
         when "SPRT"
-          sprt(section_end) if ((@specific_chunk && @specific_chunk == "SPRT") || !@specific_chunk)
+          sprt(section_end) if ((@specific_chunk == "SPRT") || @specific_chunk.nil?)
         when "SCPT"
-          scpt if ((@specific_chunk && @specific_chunk == "SCPT") || !@specific_chunk)
+          scpt if ((@specific_chunk == "SCPT") || @specific_chunk.nil?)
         when "FONT"
-          font if ((@specific_chunk && @specific_chunk == "FONT") || !@specific_chunk)
+          font if ((@specific_chunk == "FONT") || @specific_chunk.nil?)
         when "CODE"
-          code if ((@specific_chunk && @specific_chunk == "CODE") || !@specific_chunk)
+          code if ((@specific_chunk == "CODE") || @specific_chunk.nil?)
         when "VARI"
-          vari if ((@specific_chunk && @specific_chunk == "VARI") || !@specific_chunk)
+          vari if ((@specific_chunk == "VARI") || @specific_chunk.nil?)
         when "FUNC"
-          func if ((@specific_chunk && @specific_chunk == "FUNC") || !@specific_chunk)
+          func if ((@specific_chunk == "FUNC") || @specific_chunk.nil?)
         when "STRG"
-          strg if ((@specific_chunk && @specific_chunk == "STRG") || !@specific_chunk)
+          strg if ((@specific_chunk == "STRG") || @specific_chunk.nil?)
         when "TXTR"
-          txtr(section_end) if ((@specific_chunk && @specific_chunk == "TXTR") || !@specific_chunk)
+          txtr(section_end) if ((@specific_chunk == "TXTR") || @specific_chunk.nil?)
         when "AUDO"
-          audo if ((@specific_chunk && @specific_chunk == "AUDO") || !@specific_chunk)
+          audo if ((@specific_chunk == "AUDO") || @specific_chunk.nil?)
         else
           raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}")
         end
