@@ -32,7 +32,7 @@
 require 'json'
 
 module Va11halla
-  class Instruction < Struct.new(:name, :params)
+  Instruction = Struct.new(:name, :params) do
     def to_h
       return {
         "type" => "instruction",
@@ -46,7 +46,7 @@ module Va11halla
     end
   end
 
-  class Dialogue < Struct.new(:text)
+  Dialogue = Struct.new(:text) do
     def to_h
       return {
         "type" => "dialogue",
