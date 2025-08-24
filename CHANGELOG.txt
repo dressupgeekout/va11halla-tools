@@ -13,6 +13,7 @@ DATE???
 - STRGs are extracted to a file instead of spamming the standard output.
 - Preliminary interpretation of the SHDR chunk, which will allow isolating
   shader code for GPUs.
+- Preliminary interpretation of the TPAG chunk is in place.
 
 
 Version 0.0.1
