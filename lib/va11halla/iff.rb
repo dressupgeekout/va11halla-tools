@@ -178,6 +178,10 @@ module Va11halla
     # The SOND chunk contains information about the audio data, but the audio
     # itself is located in the AUDO chunk. Hence, there are an equal number
     # SONDs as there are AUDOs.
+    #
+    # In VA-11 Hall-A, every SOND has a `extname` of ".ogg" but there are a
+    # few odd cases where the `filename` suggests it's an MP3 (e.g.,
+    # "a_new_frontier.mp3"). However, the data is indeed Ogg Vorbis.
     def sond
       @sond_count = read_uint
       @sond_infos = Array.new(@sond_count)
@@ -201,12 +205,12 @@ module Va11halla
 
         @fp.seek(offset)
         name_loc = read_uint
-        si.x = read_uint # not sure what this is
+        si.x = read_uint # Always 102 ?
         extname_loc = read_uint
         filename_loc = read_uint
-        read_uint # zero?
-        si.a = read_uint
-        2.times { read_uint } # zeroes?
+        read_uint # Zero?
+        si.a = read_uint # Always 1065353216 ?
+        2.times { read_uint } # Zeroes?
         si.index = read_uint
 
         @fp.seek(name_loc-4)
