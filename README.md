@@ -22,6 +22,15 @@ focus. So, YMMV there.
   anything else, really.
 
 
+## Compatibility
+
+The VA-11 Hall-A Tools have been tested to work on the following files:
+
+- `data.win` from `VA-11 Hall A 1.2.1.3 Windows.zip` from itch.io
+- `game.ios` from `VA-11 Hall A 1.2.1.3 OS X.app.zip` from itch.io
+- `game.unx` from `VA-11 Hall A 1.2.1.3 Linux.zip` from itch.io
+
+
 ## License
 
 The VA-11 Hall-A Tools are released under a permissive BSD-style license.
