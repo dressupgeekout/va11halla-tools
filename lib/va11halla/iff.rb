@@ -352,8 +352,7 @@ module Va11halla
         varname_loc = read_uint
         name_loc = read_uint
         fi.ptsize = read_uint
-        read_uint # blank 3?
-        read_uint # blank 2?
+        2.times { read_uint } # blanks?
         fi.b = read_ushort
         fi.c = read_ushort
         fi.d = read_ushort
