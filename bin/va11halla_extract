@@ -140,4 +140,11 @@ if debug
     end
     puts
   end
+
+  puts
+
+  puts "Shdr infos:"
+  data.shdr_infos.each do |si|
+    puts("  #{si}")
+  end
 end

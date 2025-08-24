@@ -63,6 +63,12 @@ module Va11halla
     end
   end
 
+  ShdrInfo = Struct.new(:index, :a, :b, :c, :d, :e) do
+    def to_s
+      return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, d.inspect, e.inspect])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -88,10 +94,12 @@ module Va11halla
     attr_reader :font_infos
     attr_reader :sond_infos
     attr_reader :sprt_infos
+    attr_reader :shdr_infos
     attr_reader :sond_count
     attr_reader :agrp_count
     attr_reader :sprt_count
     attr_reader :scpt_count
+    attr_reader :shdr_count
     attr_reader :font_count
     attr_reader :code_count
     attr_reader :vari_count
@@ -157,7 +165,7 @@ module Va11halla
         when "PATH"
           nil
         when "SHDR"
-          nil
+          shdr if ((@specific_chunk && @specific_chunk == "SHDR") || !@specific_funk)
         when "TMLN"
           nil
         when "OBJT"
@@ -195,6 +203,36 @@ module Va11halla
         end
 
         @fp.seek(section_end)
+      end
+    end
+
+    # The SHDR chunk contains pointers to STRGs bearing shader code intended
+    # for the GPU.
+    def shdr
+      @shdr_count = read_uint
+      @shdr_infos = Array.new(@shdr_count)
+      real_offsets = Array.new(@shdr_count)
+
+      (0...@shdr_count).each do |i|
+        real_offsets[i] = read_uint
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        si = ShdrInfo.new
+        si.index = i
+
+        @fp.seek(offset)
+        si.a = read_uint32le
+        si.b = read_uint16le
+        si.c = read_uint16le
+        si.d = []
+        6.times { si.d << read_uint32le }
+        2.times { read_uint32le } # Zeroes
+
+        count = read_uint32le
+        si.e = []
+        count.times { si.e << read_uint32le }
+        @shdr_infos[i] = si
       end
     end
 
@@ -478,6 +516,7 @@ module Va11halla
         "SCPT" => @scpt_count,
         "SOND" => @sond_count,
         "SPRT" => @sprt_count,
+        "SHDR" => @shdr_count,
         "STRG" => @strg_count,
         "TXTR" => @txtr_count,
         "VARI" => @vari_count,
@@ -501,7 +540,7 @@ module Va11halla
       return @fp.read(2).unpack('S<')[0]
     end
 
-    alias read_ushortle read_ushort
+    alias read_uint16le read_ushort
 
     def read_uint
       return @fp.read(4).unpack('L<')[0]
