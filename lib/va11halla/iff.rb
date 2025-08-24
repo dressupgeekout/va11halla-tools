@@ -536,12 +536,14 @@ module Va11halla
       end
     end
 
+    # Returns the next 2-byte word as a single unsigned value.
     def read_ushort
       return @fp.read(2).unpack('S<')[0]
     end
 
     alias read_uint16le read_ushort
 
+    # Returns the next 4-byte word as a single unsigned value.
     def read_uint
       return @fp.read(4).unpack('L<')[0]
     end
