@@ -75,6 +75,12 @@ module Va11halla
     end
   end
 
+  CodeInfo = Struct.new(:index, :varname, :a, :b, :c, :d) do
+    def to_s
+      return ("CODE %d\t%s\t%s" % [index, varname, [a, b, c, d]])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -102,12 +108,14 @@ module Va11halla
     attr_reader :tpag_infos
     attr_reader :sprt_infos
     attr_reader :shdr_infos
+    attr_reader :code_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
     attr_reader :sprt_count
     attr_reader :scpt_count
     attr_reader :shdr_count
+    attr_reader :code_count
     attr_reader :font_count
     attr_reader :code_count
     attr_reader :vari_count
@@ -438,6 +446,31 @@ module Va11halla
 
     def code
       @code_count = read_uint
+      @code_infos = Array.new(@code_count)
+      real_offsets = []
+
+      (0...@code_count).each do |i|
+        real_offsets[i] = read_uint32le
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        ci = CodeInfo.new
+        ci.index = i
+
+        @fp.seek(offset)
+        varname_loc = read_uint32le
+        ci.a = read_uint32le
+        ci.b = read_uint32le
+        ci.c = read_uint16le
+        ci.d = read_uint16le
+        read_uint32le # Zeroes?
+
+        @fp.seek(varname_loc-4)
+        varname_len = read_uint32le
+        ci.varname = read_chars(varname_len)
+
+        @code_infos[i] = ci
+      end
     end
 
     def vari

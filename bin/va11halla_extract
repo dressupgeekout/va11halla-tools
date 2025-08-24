@@ -154,4 +154,11 @@ if debug
   data.tpag_infos.each do |ti|
     puts("  #{ti}")
   end
+
+  puts
+
+  puts "Code infos:"
+  data.code_infos.each do |ci|
+    puts("  #{ci}")
+  end
 end
