@@ -69,6 +69,12 @@ module Va11halla
     end
   end
 
+  TpagInfo = Struct.new(:index, :loc) do
+    def to_s
+      return ("TPAG %d\t%d" % [index, loc])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -93,9 +99,11 @@ module Va11halla
     attr_reader :sond_filenames
     attr_reader :font_infos
     attr_reader :sond_infos
+    attr_reader :tpag_infos
     attr_reader :sprt_infos
     attr_reader :shdr_infos
     attr_reader :sond_count
+    attr_reader :tpag_count
     attr_reader :agrp_count
     attr_reader :sprt_count
     attr_reader :scpt_count
@@ -175,7 +183,7 @@ module Va11halla
         when "DAFL"
           nil
         when "TPAG"
-          nil
+          tpag if ((@specific_chunk == "TPAG") || @specific_chunk.nil?)
         when "SOND"
           sond if ((@specific_chunk == "SOND") || @specific_chunk.nil?)
         when "AGRP"
@@ -233,6 +241,23 @@ module Va11halla
         si.e = []
         count.times { si.e << read_uint32le }
         @shdr_infos[i] = si
+      end
+    end
+
+    def tpag
+      @tpag_count = read_uint32le
+      @tpag_infos = Array.new(@tpag_count)
+      real_offsets = Array.new(@tpag_count)
+
+      (0...@tpag_count).each do |i|
+        real_offsets[i] = read_uint32le
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        ti = TpagInfo.new
+        ti.index = i
+        ti.loc = offset
+        @tpag_infos[i] = ti
       end
     end
 
@@ -518,6 +543,7 @@ module Va11halla
         "SPRT" => @sprt_count,
         "SHDR" => @shdr_count,
         "STRG" => @strg_count,
+        "TPAG" => @tpag_count,
         "TXTR" => @txtr_count,
         "VARI" => @vari_count,
       }

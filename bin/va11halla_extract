@@ -147,4 +147,11 @@ if debug
   data.shdr_infos.each do |si|
     puts("  #{si}")
   end
+
+  puts
+
+  puts "Tpag infos:"
+  data.tpag_infos.each do |ti|
+    puts("  #{ti}")
+  end
 end
