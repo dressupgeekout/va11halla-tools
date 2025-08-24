@@ -39,6 +39,29 @@
 require 'yaml'
 
 module Va11halla
+  SondInfo = Struct.new(:x, :a, :extname, :index, :name, :filename) do
+    def to_s
+      return ("SOND %d\t%d\t%s\t%d\t%s\t%s" % [x, a, extname, index, name, filename])
+    end
+  end
+
+  SprtFrame = Struct.new(:index, :n_sheet, :ary) do
+    def to_s
+      return ("\\ frame %d @ sheet #%d\t%s" % [index, n_sheet, ary.inspect])
+    end
+  end
+
+  SprtInfo = Struct.new(:index, :x, :name, :w, :h, :a, :b, :nframes, :frames) do
+    def to_s
+      return ("SPRT %d\t%d\t%s -> %dx%d -> %dx%d\t%d" % [index, x, name, w, h, a, b, nframes])
+    end
+  end
+
+  FontInfo = Struct.new(:index, :varname, :name, :ptsize, :b, :c, :d, :e) do
+    def to_s
+      return ("FONT %d\t%s\t%s\t%d pt\t%d\t%d\t%d\t%d" % [index, varname, name, ptsize, b, c, d, e])
+    end
+  end
 
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
@@ -194,14 +217,8 @@ module Va11halla
 
       p real_offsets if @debug
 
-      sondinfo_klass = Struct.new(:x, :a, :extname, :index, :name, :filename) do
-        def to_s
-          return ("SOND %d\t%d\t%s\t%d\t%s\t%s" % [x, a, extname, index, name, filename])
-        end
-      end
-
       real_offsets.each_with_index do |offset, i|
-        si = sondinfo_klass.new
+        si = SondInfo.new
 
         @fp.seek(offset)
         name_loc = read_uint
@@ -267,20 +284,8 @@ module Va11halla
 
       p real_offsets if @debug
 
-      sprtframe_klass = Struct.new(:index, :n_sheet, :ary) do
-        def to_s
-          return ("\\ frame %d @ sheet #%d\t%s" % [index, n_sheet, ary.inspect])
-        end
-      end
-
-      sprtinfo_klass = Struct.new(:index, :x, :name, :w, :h, :a, :b, :nframes, :frames) do
-        def to_s
-          return ("SPRT %d\t%d\t%s -> %dx%d -> %dx%d\t%d" % [index, x, name, w, h, a, b, nframes])
-        end
-      end
-
       real_offsets.each_with_index do |offset, i|
-        si = sprtinfo_klass.new
+        si = SprtInfo.new
         si.index = i
 
         @fp.seek(offset)
@@ -308,7 +313,7 @@ module Va11halla
         si.name = read_chars(namelen)
 
         (0...nframes).each do |j|
-          sf = sprtframe_klass.new
+          sf = SprtFrame.new
           sf.index = j
           @fp.seek(frames[j]-2)
           sf.n_sheet = read_ushort
@@ -342,14 +347,8 @@ module Va11halla
 
       p real_offsets if @debug
 
-      fontinfo_klass = Struct.new(:index, :varname, :name, :ptsize, :b, :c, :d, :e) do
-        def to_s
-          return ("FONT %d\t%s\t%s\t%d pt\t%d\t%d\t%d\t%d" % [index, varname, name, ptsize, b, c, d, e])
-        end
-      end
-
       real_offsets.each_with_index do |offset, i|
-        fi = fontinfo_klass.new
+        fi = FontInfo.new
         fi.index = i
 
         @fp.seek(offset)
