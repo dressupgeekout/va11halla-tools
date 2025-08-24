@@ -14,6 +14,7 @@ DATE???
 - Preliminary interpretation of the SHDR chunk, which will allow isolating
   shader code for GPUs.
 - Preliminary interpretation of the TPAG chunk is in place.
+- Preliminary interpretation of the CODE chunk is in place.
 
 
 Version 0.0.1
