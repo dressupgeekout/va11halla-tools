@@ -93,6 +93,12 @@ module Va11halla
     end
   end
 
+  StrgInfo = Struct.new(:index, :string, :size) do
+    def to_s
+      return ("STRG %d\t%d bytes" % [index, size])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -122,6 +128,7 @@ module Va11halla
     attr_reader :code_infos
     attr_reader :txtr_infos
     attr_reader :audo_infos
+    attr_reader :strg_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
@@ -516,32 +523,38 @@ module Va11halla
       @func_count = read_uint
     end
 
+    # The STRG chunk contains a whole bunch of string data. In VA-11
+    # Hall-A's case, this encapsulates nearly all text that is not character
+    # dialogue.
+    #
+    # XXX I think this implementation wastes a lot of memory.
     def strg
       @strg_count = read_uint
+      @strg_infos = Array.new(@strg_count)
       real_offsets = []
 
-      # XXX We're making an enormous array like this
       (0...@strg_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
+        real_offsets[i] = read_uint
       end
 
+      real_offsets.each_with_index do |real_offset, i|
+        si = StrgInfo.new
+        si.index = i
+
+        @fp.seek(real_offset)
+        si.size = read_uint
+        si.string = read_chars(si.size)
+
+        @strg_infos[i] = si
+      end
+
+      # Don't create 1 file per string. Instead, we combine them all into a
+      # giant array and write a single file.
       if @extract
-        strgs = Array.new(@strg_count)
-
-        real_offsets.each_with_index do |real_offset, i|
-          @fp.seek(real_offset)
-          strlen = read_uint
-          the_str = read_chars(strlen)
-          @fp.read(1) # terminating NUL
-          strgs[i] = the_str
-        end
-
-        puts "writing STRG.yaml" if @debug
-
-        File.open("STRG.yaml", "w") do |fp|
-          fp.puts(YAML.dump(strgs))
-        end
+        all_strings = @strg_infos.map { |si| si.string }
+        filename = "STRG.yaml"
+        puts "writing #{filename}"
+        File.open(filename, "w") { |f| f.puts(YAML.dump(all_strings)) }
       end
     end
 
