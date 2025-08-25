@@ -4,7 +4,7 @@ VA-11 Hall-A Tools ChangeLog
 Version 0.1.0 
 -------------
 
-DATE??? 
+August 25, 2025
 
 - Revitalized the project! The code itself is rearranged to match
   conventional Ruby source layout, including a new namespace `Va11halla`.
