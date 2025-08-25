@@ -281,8 +281,8 @@ module Va11halla
       end
 
       if @extract
-        @shdr_infos.each_with_index do |shdr, i|
-          shdr.data.each do |datum|
+        @shdr_infos.each_with_index do |si, i|
+          si.data.each do |datum|
             @fp.seek(datum[:location])
             puts "writing #{datum[:filename]}"
             File.open(datum[:filename], "wb") { |fp| fp.puts(@fp.read(datum[:size])) }
@@ -590,10 +590,10 @@ module Va11halla
       @txtr_infos[last_index].filename = fname
 
       if @extract
-        @txtr_infos.each do |txtr|
-          puts("writing #{txtr.filename}")
-          @fp.seek(txtr.location)
-          File.open(txtr.filename, 'wb') { |f| f.write(@fp.read(txtr.size)) }
+        @txtr_infos.each do |ti|
+          puts("writing #{ti.filename}")
+          @fp.seek(ti.location)
+          File.open(ti.filename, 'wb') { |f| f.write(@fp.read(ti.size)) }
         end
       end
     end
