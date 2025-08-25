@@ -219,4 +219,11 @@ if debug
   data.txtr_infos.each do |ti|
     puts "  #{ti}"
   end
+
+  puts
+
+  puts "Bgnd infos:"
+  data.bgnd_infos.each do |bi|
+    puts "  #{bi}"
+  end
 end

@@ -63,6 +63,12 @@ module Va11halla
     end
   end
 
+  BgndInfo = Struct.new(:index, :name) do
+    def to_s
+      return ("BGND %d\t%s" % [index, name])
+    end
+  end
+
   ShdrInfo = Struct.new(:index, :a, :b, :c, :data, :e) do
     def to_s
       return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, data.inspect, e.inspect])
@@ -128,6 +134,7 @@ module Va11halla
     attr_reader :sond_infos
     attr_reader :tpag_infos
     attr_reader :sprt_infos
+    attr_reader :bgnd_infos
     attr_reader :shdr_infos
     attr_reader :room_infos
     attr_reader :code_infos
@@ -139,6 +146,7 @@ module Va11halla
     attr_reader :agrp_count
     attr_reader :sprt_count
     attr_reader :scpt_count
+    attr_reader :bgnd_count
     attr_reader :shdr_count
     attr_reader :room_count
     attr_reader :code_count
@@ -191,7 +199,7 @@ module Va11halla
           when "GEN8"; nil;
           when "OPTN"; nil;
           when "EXTN"; nil;
-          when "BGND"; nil;
+          when "BGND"; bgnd;
           when "PATH"; nil;
           when "SHDR"; shdr;
           when "TMLN"; nil;
@@ -214,6 +222,30 @@ module Va11halla
         end
 
         @fp.seek(section_end)
+      end
+    end
+
+    def bgnd
+      @bgnd_count = read_uint32le
+      @bgnd_infos = Array.new(@bgnd_count)
+      real_offsets = Array.new(@bgnd_count)
+
+      (0...@bgnd_count).each do |i|
+        real_offsets[i] = read_uint32le
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        bi = BgndInfo.new
+        bi.index = i
+
+        @fp.seek(offset)
+        name_loc = read_uint32le
+
+        @fp.seek(name_loc-4)
+        name_len = read_uint32le
+        bi.name = read_chars(name_len)
+
+        @bgnd_infos[i] = bi
       end
     end
 
@@ -604,6 +636,7 @@ module Va11halla
       return {
         "AGRP" => @agrp_count,
         "AUDO" => @audo_count,
+        "BGND" => @bgnd_count,
         "CODE" => @code_count,
         "FONT" => @font_count,
         "FUNC" => @func_count,
