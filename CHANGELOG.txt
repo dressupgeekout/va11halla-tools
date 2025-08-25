@@ -14,6 +14,8 @@ DATE???
 - Preliminary interpretation and extraction of shader code.
 - Preliminary interpretation of the TPAG chunk is in place.
 - Preliminary interpretation of the CODE chunk is in place.
+- For text mode, you can now specify which script to run as a command line
+  option to `va11halla_textmode`.
 
 
 Version 0.0.1
