@@ -95,26 +95,32 @@ end
 
 if extract
   # Extract TXTRs.
-  data.txtr_infos.each do |ti|
-    puts("writing #{ti.filename}")
-    data.fp.seek(ti.location)
-    File.open(ti.filename, 'wb') { |fp| fp.write(data.fp.read(ti.size)) }
+  if specific_chunk.upcase == "TXTR" || specific_chunk.nil?
+    data.txtr_infos.each do |ti|
+      puts("writing #{ti.filename}")
+      data.fp.seek(ti.location)
+      File.open(ti.filename, 'wb') { |fp| fp.write(data.fp.read(ti.size)) }
+    end
   end
 
   # Extract AUDOs.
-  data.audo_infos.each do |ai|
-    data.fp.seek(ai.location)
-    filename = data.sond_infos[ai.index].filename
-    puts("writing #{filename}")
-    File.open(filename, 'wb') { |fp| fp.write(data.fp.read(ai.size)) }
+  if specific_chunk.upcase == "AUDO" || specific_chunk.nil?
+    data.audo_infos.each do |ai|
+      data.fp.seek(ai.location)
+      filename = data.sond_infos[ai.index].filename
+      puts("writing #{filename}")
+      File.open(filename, 'wb') { |fp| fp.write(data.fp.read(ai.size)) }
+    end
   end
 
   # Extract SHDRs.
-  data.shdr_infos.each_with_index do |si|
-    si.data.each do |datum|
-      data.fp.seek(datum[:location])
-      puts "writing #{datum[:filename]}"
-      File.open(datum[:filename], "wb") { |fp| fp.puts(data.fp.read(datum[:size])) }
+  if specific_chunk.upcase == "SHDR" || specific_chunk.nil?
+    data.shdr_infos.each_with_index do |si|
+      si.data.each do |datum|
+        data.fp.seek(datum[:location])
+        puts "writing #{datum[:filename]}"
+        File.open(datum[:filename], "wb") { |fp| fp.puts(data.fp.read(datum[:size])) }
+      end
     end
   end
 
@@ -122,10 +128,12 @@ if extract
   #
   # Don't create 1 file per string. Instead, we combine them all into a
   # giant array and write a single file.
-  all_strings = data.strg_infos.map { |si| si.string }
-  filename = "STRG.yaml"
-  puts "writing #{filename}"
-  File.open(filename, "w") { |fp| fp.puts(YAML.dump(all_strings)) }
+  if specific_chunk.upcase == "STRG" || specific_chunk.nil?
+    all_strings = data.strg_infos.map { |si| si.string }
+    filename = "STRG.yaml"
+    puts "writing #{filename}"
+    File.open(filename, "w") { |fp| fp.puts(YAML.dump(all_strings)) }
+  end
 end
 
 data.close

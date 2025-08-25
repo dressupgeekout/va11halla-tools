@@ -112,7 +112,6 @@ module Va11halla
     ]
 
     # Options requested by the caller governing how to read the IFF file.
-    attr_accessor :specific_chunk
     attr_accessor :debug
 
     # Data that is discovered while parsing the file.
@@ -149,8 +148,6 @@ module Va11halla
 
     def initialize(filename)
       @filename = filename
-
-      @specific_chunk = nil
       @debug = false
     end
 
@@ -165,10 +162,8 @@ module Va11halla
     end
 
     # Available options:
-    # - `:specific_chunk`
     # - `:debug`
     def parse(**kwargs)
-      @specific_chunk = kwargs[:specific_chunk]
       @debug = kwargs[:debug]
 
       verify_magic
@@ -196,7 +191,7 @@ module Va11halla
         when "PATH"
           nil
         when "SHDR"
-          shdr if ((@specific_chunk == "SHDR") || @specific_chunk.nil?)
+          shdr
         when "TMLN"
           nil
         when "OBJT"
@@ -206,29 +201,29 @@ module Va11halla
         when "DAFL"
           nil
         when "TPAG"
-          tpag if ((@specific_chunk == "TPAG") || @specific_chunk.nil?)
+          tpag
         when "SOND"
-          sond if ((@specific_chunk == "SOND") || @specific_chunk.nil?)
+          sond
         when "AGRP"
-          agrp if ((@specific_chunk == "AGRP") || @specific_chunk.nil?)
+          agrp
         when "SPRT"
-          sprt(section_end) if ((@specific_chunk == "SPRT") || @specific_chunk.nil?)
+          sprt(section_end)
         when "SCPT"
-          scpt if ((@specific_chunk == "SCPT") || @specific_chunk.nil?)
+          scpt
         when "FONT"
-          font if ((@specific_chunk == "FONT") || @specific_chunk.nil?)
+          font
         when "CODE"
-          code if ((@specific_chunk == "CODE") || @specific_chunk.nil?)
+          code
         when "VARI"
-          vari if ((@specific_chunk == "VARI") || @specific_chunk.nil?)
+          vari
         when "FUNC"
-          func if ((@specific_chunk == "FUNC") || @specific_chunk.nil?)
+          func
         when "STRG"
-          strg if ((@specific_chunk == "STRG") || @specific_chunk.nil?)
+          strg
         when "TXTR"
-          txtr(section_end) if ((@specific_chunk == "TXTR") || @specific_chunk.nil?)
+          txtr(section_end)
         when "AUDO"
-          audo if ((@specific_chunk == "AUDO") || @specific_chunk.nil?)
+          audo
         else
           raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}")
         end
