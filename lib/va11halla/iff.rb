@@ -207,7 +207,7 @@ module Va11halla
         when "AGRP"
           agrp
         when "SPRT"
-          sprt(section_end)
+          sprt
         when "SCPT"
           scpt
         when "FONT"
@@ -366,7 +366,7 @@ module Va11halla
     end
 
     # The SPRT chunk.
-    def sprt(section_end)
+    def sprt
       @sprt_count = read_uint
       @sprt_infos = Array.new(@sprt_count)
       real_offsets = []
