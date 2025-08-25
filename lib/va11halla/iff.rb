@@ -180,52 +180,29 @@ module Va11halla
         section_end = @fp.tell() + section_length
 
         case chunk_name
-        when "GEN8"
-          nil
-        when "OPTN"
-          nil
-        when "EXTN"
-          nil
-        when "BGND"
-          nil
-        when "PATH"
-          nil
-        when "SHDR"
-          shdr
-        when "TMLN"
-          nil
-        when "OBJT"
-          nil
-        when "ROOM"
-          nil
-        when "DAFL"
-          nil
-        when "TPAG"
-          tpag
-        when "SOND"
-          sond
-        when "AGRP"
-          agrp
-        when "SPRT"
-          sprt
-        when "SCPT"
-          scpt
-        when "FONT"
-          font
-        when "CODE"
-          code
-        when "VARI"
-          vari
-        when "FUNC"
-          func
-        when "STRG"
-          strg
-        when "TXTR"
-          txtr(section_end)
-        when "AUDO"
-          audo
-        else
-          raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}")
+          when "GEN8"; nil;
+          when "OPTN"; nil;
+          when "EXTN"; nil;
+          when "BGND"; nil;
+          when "PATH"; nil;
+          when "SHDR"; shdr;
+          when "TMLN"; nil;
+          when "OBJT"; nil;
+          when "ROOM"; nil;
+          when "DAFL"; nil;
+          when "TPAG"; tpag;
+          when "SOND"; sond;
+          when "AGRP"; agrp;
+          when "SPRT"; sprt;
+          when "SCPT"; scpt;
+          when "FONT"; font;
+          when "CODE"; code;
+          when "VARI"; vari;
+          when "FUNC"; func;
+          when "STRG"; strg;
+          when "TXTR"; txtr(section_end);
+          when "AUDO"; audo;
+          else; raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}");
         end
 
         @fp.seek(section_end)
