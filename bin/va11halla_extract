@@ -31,9 +31,9 @@ require 'optparse'
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
 require 'va11halla'
 
-PROGNAME = File.basename($0)
-
 ########## ########## ##########
+
+PROGNAME = File.basename($0)
 
 extract = true
 specific_chunk = nil
