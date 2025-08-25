@@ -81,6 +81,12 @@ module Va11halla
     end
   end
 
+  TxtrInfo = Struct.new(:index, :location, :filename, :size) do
+    def to_s
+      return ("TXTR %d\t%s\t%d bytes" % [index, filename, size])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -109,6 +115,7 @@ module Va11halla
     attr_reader :sprt_infos
     attr_reader :shdr_infos
     attr_reader :code_infos
+    attr_reader :txtr_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
@@ -524,34 +531,52 @@ module Va11halla
     # are spritesheets in PNG format.
     def txtr(section_end)
       @txtr_count = read_uint
+      @txtr_infos = Array.new(@txtr_count)
       pre_offsets = @fp.read(4*@txtr_count).unpack("L<*")
       p pre_offsets if @debug
-      @fp.read(4) # zeroes?
+      read_uint32le # zeroes?
 
       real_offsets = pre_offsets.map do |pre_offset|
         @fp.seek(pre_offset)
-        _, real_offset = @fp.read(8).unpack('L<*')
+        read_uint32le # ?
+        real_offset = read_uint32le
         real_offset
       end
 
       p real_offsets if @debug
 
+      real_offsets.each_with_index do |offset, i|
+        ti = TxtrInfo.new
+        ti.index = i
+        ti.location = offset
+        @txtr_infos[i] = ti
+      end
+
       # XXX but where are the TXTR lengths, really?
       # According to this, there might not even *be* lengths included:
       # --> https://github.com/krzys-h/UndertaleModTool/wiki/Corrections-to-Game-Maker:-Studio-1.4-data.win-format-and-VM-bytecode,-.yydebug-format-and-debugger-instructions
-      if @extract
-        (0...(real_offsets.length-1)).each do |i|
-          @fp.seek(real_offsets[i])
-          size = real_offsets[i+1] - @fp.tell()
-          fname = sprintf("TXTR_%03d.png", i)
-          puts("writing #{fname}")
-          File.open(fname, 'wb') { |txtr| txtr.write(@fp.read(size)) }
-        end
+      (0...(@txtr_count-1)).each do |i|
+        @fp.seek(real_offsets[i])
+        size = real_offsets[i+1] - @fp.tell()
+        fname = sprintf("TXTR_%03d.png", i)
+        @txtr_infos[i].size = size
+        @txtr_infos[i].filename = fname
+      end
 
-        # I guess we have to treat the last txtr specially:
-        @fp.seek(real_offsets[real_offsets.length-1])
-        size = section_end - @fp.tell()
-        File.open(sprintf('TXTR_%03d.png', real_offsets.length-1), 'wb') { |txtr| txtr.write(@fp.read(size)) }
+      # I guess we have to treat the last txtr specially:
+      last_index = @txtr_count - 1
+      @fp.seek(real_offsets[last_index])
+      size = section_end - @fp.tell()
+      fname = sprintf('TXTR_%03d.png', last_index)
+      @txtr_infos[last_index].size = size
+      @txtr_infos[last_index].filename = fname
+
+      if @extract
+        @txtr_infos.each do |txtr|
+          puts("writing #{txtr.filename}")
+          @fp.seek(txtr.location)
+          File.open(txtr.filename, 'wb') { |f| f.write(@fp.read(txtr.size)) }
+        end
       end
     end
 

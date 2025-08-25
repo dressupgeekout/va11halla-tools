@@ -161,4 +161,11 @@ if debug
   data.code_infos.each do |ci|
     puts("  #{ci}")
   end
+
+  puts
+
+  puts "Txtr infos:"
+  data.txtr_infos.each do |ti|
+    puts "  #{ti}"
+  end
 end
