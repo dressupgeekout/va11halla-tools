@@ -226,4 +226,11 @@ if debug
   data.bgnd_infos.each do |bi|
     puts "  #{bi}"
   end
+
+  puts
+
+  puts "Scpt infos:"
+  data.scpt_infos.each do |si|
+    puts "  #{si}"
+  end
 end

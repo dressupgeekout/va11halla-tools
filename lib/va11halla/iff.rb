@@ -57,6 +57,12 @@ module Va11halla
     end
   end
 
+  ScptInfo = Struct.new(:index, :name) do
+    def to_s
+      return ("SCPT %d\t%s" % [index, name])
+    end
+  end
+
   FontInfo = Struct.new(:index, :varname, :name, :ptsize, :b, :c, :d, :e) do
     def to_s
       return ("FONT %d\t%s\t%s\t%d pt\t%d\t%d\t%d\t%d" % [index, varname, name, ptsize, b, c, d, e])
@@ -134,6 +140,7 @@ module Va11halla
     attr_reader :sond_infos
     attr_reader :tpag_infos
     attr_reader :sprt_infos
+    attr_reader :scpt_infos
     attr_reader :bgnd_infos
     attr_reader :shdr_infos
     attr_reader :room_infos
@@ -459,7 +466,25 @@ module Va11halla
     end
 
     def scpt
-      @scpt_count = read_uint
+      @scpt_count = read_uint32le
+      @scpt_infos = Array.new(@scpt_count)
+      real_offsets = []
+
+      (0...@scpt_count).each do |i|
+        real_offsets[i] = read_uint32le
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        si = ScptInfo.new
+        si.index = i
+
+        @fp.seek(offset)
+        name_loc = read_uint32le
+        @fp.seek(name_loc-4)
+        name_len = read_uint32le
+        si.name = read_chars(name_len)
+        @scpt_infos[i] = si
+      end
     end
 
     # The FONT chunk contains information about fonts.
