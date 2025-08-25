@@ -79,7 +79,7 @@ module Va11halla
       @raw.split("").each do |char|
         case char
         when "["
-          if not @mode and !dialogue.empty?
+          if !@mode && !dialogue.empty?
             @instructions << Dialogue.new(dialogue)
             dialogue = ""
           end
