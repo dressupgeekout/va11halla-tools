@@ -113,7 +113,6 @@ module Va11halla
 
     # Options requested by the caller governing how to read the IFF file.
     attr_accessor :specific_chunk
-    attr_accessor :extract
     attr_accessor :debug
 
     # Data that is discovered while parsing the file.
@@ -152,7 +151,6 @@ module Va11halla
       @filename = filename
 
       @specific_chunk = nil
-      @extract = true
       @debug = false
     end
 
@@ -168,11 +166,9 @@ module Va11halla
 
     # Available options:
     # - `:specific_chunk`
-    # - `:extract`
     # - `:debug`
     def parse(**kwargs)
       @specific_chunk = kwargs[:specific_chunk]
-      @extract = kwargs[:extract]
       @debug = kwargs[:debug]
 
       verify_magic
@@ -285,16 +281,6 @@ module Va11halla
         end
 
         @shdr_infos[i] = si
-      end
-
-      if @extract
-        @shdr_infos.each_with_index do |si, i|
-          si.data.each do |datum|
-            @fp.seek(datum[:location])
-            puts "writing #{datum[:filename]}"
-            File.open(datum[:filename], "wb") { |fp| fp.puts(@fp.read(datum[:size])) }
-          end
-        end
       end
     end
 
@@ -547,15 +533,6 @@ module Va11halla
 
         @strg_infos[i] = si
       end
-
-      # Don't create 1 file per string. Instead, we combine them all into a
-      # giant array and write a single file.
-      if @extract
-        all_strings = @strg_infos.map { |si| si.string }
-        filename = "STRG.yaml"
-        puts "writing #{filename}"
-        File.open(filename, "w") { |f| f.puts(YAML.dump(all_strings)) }
-      end
     end
 
     # The TXTR chunk contains actual raster graphic data. In practice, these
@@ -601,14 +578,6 @@ module Va11halla
       fname = sprintf('TXTR_%03d.png', last_index)
       @txtr_infos[last_index].size = size
       @txtr_infos[last_index].filename = fname
-
-      if @extract
-        @txtr_infos.each do |ti|
-          puts("writing #{ti.filename}")
-          @fp.seek(ti.location)
-          File.open(ti.filename, 'wb') { |f| f.write(@fp.read(ti.size)) }
-        end
-      end
     end
 
     # The AUDO chunk contains the actual audio data. Information about this
@@ -630,15 +599,6 @@ module Va11halla
         @fp.seek(offset)
         ai.size = read_uint
         @audo_infos[i] = ai
-      end
-
-      if @extract
-        @audo_infos.each do |ai|
-          @fp.seek(ai.location)
-          filename = @sond_infos[ai.index].filename
-          puts("writing #{filename}")
-          File.open(filename, 'wb') { |f| f.write(@fp.read(ai.size)) }
-        end
       end
     end
 
