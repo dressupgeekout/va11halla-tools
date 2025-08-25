@@ -161,4 +161,11 @@ if debug
   data.code_infos.each do |ci|
     puts("  #{ci}")
   end
+
+  puts
+
+  puts "Vari infos:"
+  data.vari_infos.each do |vi|
+    puts("  #{vi}")
+  end
 end

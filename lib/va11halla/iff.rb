@@ -81,6 +81,12 @@ module Va11halla
     end
   end
 
+  VariInfo = Struct.new(:index, :name, :value, :a, :b, :c) do
+    def to_s
+      return ("VARI %d\t%s\t%s\t%s" % [index, name, value, [a, b, c]])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -109,6 +115,7 @@ module Va11halla
     attr_reader :sprt_infos
     attr_reader :shdr_infos
     attr_reader :code_infos
+    attr_reader :vari_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
@@ -475,6 +482,42 @@ module Va11halla
 
     def vari
       @vari_count = read_uint
+      @vari_infos = Array.new(@vari_count)
+
+      # XXX Not sure how to make this conform to the pattern...
+      8.times { read_uint32le }
+
+      # Now in earnest:
+      @vari_count.times do |i|
+        vi = VariInfo.new
+        vi.index = i
+        vi.a = read_uint32le
+        vi.b = read_uint32le
+        vi.c = read_uint32le
+        valueloc = read_uint32le
+        nameloc = read_uint32le
+        return_point = @fp.tell
+
+        #p [nameloc1, nameloc2, vi]
+
+        # XXX the FFFFs are throwing me off
+        if [valueloc, nameloc].any? { |value| value == 0xFFFFFFFF }
+          # do nothing
+        else
+          #@fp.seek(valueloc-4)
+          #value_len = read_uint32le
+          #if value_len < 128 # XXX
+          #  vi.value = read_chars(value_len)
+          #end
+
+          @fp.seek(nameloc-4)
+          name_len = read_uint32le
+          vi.name = read_chars(name_len)
+          @fp.seek(return_point)
+        end
+
+        @vari_infos[i] = vi
+      end
     end
 
     def func
