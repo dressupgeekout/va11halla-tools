@@ -63,9 +63,9 @@ module Va11halla
     end
   end
 
-  ShdrInfo = Struct.new(:index, :a, :b, :c, :d, :e) do
+  ShdrInfo = Struct.new(:index, :a, :b, :c, :data, :e) do
     def to_s
-      return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, d.inspect, e.inspect])
+      return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, data.inspect, e.inspect])
     end
   end
 
@@ -83,7 +83,25 @@ module Va11halla
 
   VariInfo = Struct.new(:index, :name, :value, :a, :b, :c) do
     def to_s
-      return ("VARI %d\t%s\t%s\t%s" % [index, name, value, [a, b, c]])
+      return ("VARI %d\t%s\t%s\t%s" % [index, name, value, [a, b, c].inspect])
+    end
+  end
+
+  TxtrInfo = Struct.new(:index, :location, :filename, :size) do
+    def to_s
+      return ("TXTR %d\t%s\t%d bytes" % [index, filename, size])
+    end
+  end
+
+  AudoInfo = Struct.new(:index, :location, :size) do
+    def to_s
+      return ("AUDO %d\tlocation=%d\t%d bytes" % [index, location, size])
+    end
+  end
+
+  StrgInfo = Struct.new(:index, :string, :size) do
+    def to_s
+      return ("STRG %d\t%d bytes" % [index, size])
     end
   end
 
@@ -100,15 +118,12 @@ module Va11halla
     ]
 
     # Options requested by the caller governing how to read the IFF file.
-    attr_accessor :specific_chunk
-    attr_accessor :extract
     attr_accessor :debug
 
     # Data that is discovered while parsing the file.
     attr_reader :total_length
     attr_reader :agrps
     attr_reader :section_lengths
-    attr_reader :sond_filenames
     attr_reader :font_infos
     attr_reader :sond_infos
     attr_reader :tpag_infos
@@ -116,6 +131,9 @@ module Va11halla
     attr_reader :shdr_infos
     attr_reader :code_infos
     attr_reader :vari_infos
+    attr_reader :txtr_infos
+    attr_reader :audo_infos
+    attr_reader :strg_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
@@ -137,9 +155,6 @@ module Va11halla
 
     def initialize(filename)
       @filename = filename
-
-      @specific_chunk = nil
-      @extract = true
       @debug = false
     end
 
@@ -154,19 +169,14 @@ module Va11halla
     end
 
     # Available options:
-    # - `:specific_chunk`
-    # - `:extract`
     # - `:debug`
     def parse(**kwargs)
-      @specific_chunk = kwargs[:specific_chunk]
-      @extract = kwargs[:extract]
       @debug = kwargs[:debug]
 
       verify_magic
 
       @total_length = read_uint
 
-      @sond_filenames = []
       @section_lengths = {}
 
       while @fp.tell < @total_length
@@ -188,7 +198,7 @@ module Va11halla
         when "PATH"
           nil
         when "SHDR"
-          shdr if ((@specific_chunk == "SHDR") || @specific_chunk.nil?)
+          shdr
         when "TMLN"
           nil
         when "OBJT"
@@ -198,29 +208,29 @@ module Va11halla
         when "DAFL"
           nil
         when "TPAG"
-          tpag if ((@specific_chunk == "TPAG") || @specific_chunk.nil?)
+          tpag
         when "SOND"
-          sond if ((@specific_chunk == "SOND") || @specific_chunk.nil?)
+          sond
         when "AGRP"
-          agrp if ((@specific_chunk == "AGRP") || @specific_chunk.nil?)
+          agrp
         when "SPRT"
-          sprt(section_end) if ((@specific_chunk == "SPRT") || @specific_chunk.nil?)
+          sprt
         when "SCPT"
-          scpt if ((@specific_chunk == "SCPT") || @specific_chunk.nil?)
+          scpt
         when "FONT"
-          font if ((@specific_chunk == "FONT") || @specific_chunk.nil?)
+          font
         when "CODE"
-          code if ((@specific_chunk == "CODE") || @specific_chunk.nil?)
+          code
         when "VARI"
-          vari if ((@specific_chunk == "VARI") || @specific_chunk.nil?)
+          vari
         when "FUNC"
-          func if ((@specific_chunk == "FUNC") || @specific_chunk.nil?)
+          func
         when "STRG"
-          strg if ((@specific_chunk == "STRG") || @specific_chunk.nil?)
+          strg
         when "TXTR"
-          txtr(section_end) if ((@specific_chunk == "TXTR") || @specific_chunk.nil?)
+          txtr(section_end)
         when "AUDO"
-          audo if ((@specific_chunk == "AUDO") || @specific_chunk.nil?)
+          audo
         else
           raise(RuntimeError, "unknown chunk: #{chunk_name.inspect}")
         end
@@ -248,13 +258,30 @@ module Va11halla
         si.a = read_uint32le
         si.b = read_uint16le
         si.c = read_uint16le
-        si.d = []
-        6.times { si.d << read_uint32le }
+
+        si.data = []
+
+        6.times do |j|
+          location = read_uint32le
+          si.data[j] = {
+            :location => location,
+          }
+        end
+
         2.times { read_uint32le } # Zeroes
 
         count = read_uint32le
         si.e = []
         count.times { si.e << read_uint32le }
+
+        si.data.length.times do |j|
+          @fp.seek(si.data[j][:location]-4)
+          size = read_uint32
+          filename = sprintf("SHDR_%02d_%02d.txt", i, j)
+          si.data[j][:size] = size
+          si.data[j][:filename] = filename
+        end
+
         @shdr_infos[i] = si
       end
     end
@@ -321,10 +348,6 @@ module Va11halla
         si.filename = read_chars(filename_len)
 
         @sond_infos[i] = si
-
-        if @extract
-          @sond_filenames[i] = si.filename
-        end
       end
     end
 
@@ -350,7 +373,7 @@ module Va11halla
     end
 
     # The SPRT chunk.
-    def sprt(section_end)
+    def sprt
       @sprt_count = read_uint
       @sprt_infos = Array.new(@sprt_count)
       real_offsets = []
@@ -524,32 +547,29 @@ module Va11halla
       @func_count = read_uint
     end
 
+    # The STRG chunk contains a whole bunch of string data. In VA-11
+    # Hall-A's case, this encapsulates nearly all text that is not character
+    # dialogue.
+    #
+    # XXX I think this implementation wastes a lot of memory.
     def strg
       @strg_count = read_uint
+      @strg_infos = Array.new(@strg_count)
       real_offsets = []
 
-      # XXX We're making an enormous array like this
       (0...@strg_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
+        real_offsets[i] = read_uint
       end
 
-      if @extract
-        strgs = Array.new(@strg_count)
+      real_offsets.each_with_index do |real_offset, i|
+        si = StrgInfo.new
+        si.index = i
 
-        real_offsets.each_with_index do |real_offset, i|
-          @fp.seek(real_offset)
-          strlen = read_uint
-          the_str = read_chars(strlen)
-          @fp.read(1) # terminating NUL
-          strgs[i] = the_str
-        end
+        @fp.seek(real_offset)
+        si.size = read_uint
+        si.string = read_chars(si.size)
 
-        puts "writing STRG.yaml" if @debug
-
-        File.open("STRG.yaml", "w") do |fp|
-          fp.puts(YAML.dump(strgs))
-        end
+        @strg_infos[i] = si
       end
     end
 
@@ -557,35 +577,45 @@ module Va11halla
     # are spritesheets in PNG format.
     def txtr(section_end)
       @txtr_count = read_uint
+      @txtr_infos = Array.new(@txtr_count)
       pre_offsets = @fp.read(4*@txtr_count).unpack("L<*")
       p pre_offsets if @debug
-      @fp.read(4) # zeroes?
+      read_uint32le # zeroes?
 
       real_offsets = pre_offsets.map do |pre_offset|
         @fp.seek(pre_offset)
-        _, real_offset = @fp.read(8).unpack('L<*')
+        read_uint32le # ?
+        real_offset = read_uint32le
         real_offset
       end
 
       p real_offsets if @debug
 
+      real_offsets.each_with_index do |offset, i|
+        ti = TxtrInfo.new
+        ti.index = i
+        ti.location = offset
+        @txtr_infos[i] = ti
+      end
+
       # XXX but where are the TXTR lengths, really?
       # According to this, there might not even *be* lengths included:
       # --> https://github.com/krzys-h/UndertaleModTool/wiki/Corrections-to-Game-Maker:-Studio-1.4-data.win-format-and-VM-bytecode,-.yydebug-format-and-debugger-instructions
-      if @extract
-        (0...(real_offsets.length-1)).each do |i|
-          @fp.seek(real_offsets[i])
-          size = real_offsets[i+1] - @fp.tell()
-          fname = sprintf("TXTR_%03d.png", i)
-          puts("writing #{fname}")
-          File.open(fname, 'wb') { |txtr| txtr.write(@fp.read(size)) }
-        end
-
-        # I guess we have to treat the last txtr specially:
-        @fp.seek(real_offsets[real_offsets.length-1])
-        size = section_end - @fp.tell()
-        File.open(sprintf('TXTR_%03d.png', real_offsets.length-1), 'wb') { |txtr| txtr.write(@fp.read(size)) }
+      (0...(@txtr_count-1)).each do |i|
+        @fp.seek(real_offsets[i])
+        size = real_offsets[i+1] - @fp.tell()
+        fname = sprintf("TXTR_%03d.png", i)
+        @txtr_infos[i].size = size
+        @txtr_infos[i].filename = fname
       end
+
+      # I guess we have to treat the last txtr specially:
+      last_index = @txtr_count - 1
+      @fp.seek(real_offsets[last_index])
+      size = section_end - @fp.tell()
+      fname = sprintf('TXTR_%03d.png', last_index)
+      @txtr_infos[last_index].size = size
+      @txtr_infos[last_index].filename = fname
     end
 
     # The AUDO chunk contains the actual audio data. Information about this
@@ -593,16 +623,20 @@ module Va11halla
     # an equal number of AUDOs as there are SONDs.
     def audo
       @audo_count = read_uint
+      @audo_infos = Array.new(@audo_count)
       offsets = @fp.read(@audo_count*4).unpack("L<*")
+
       p offsets if @debug
 
-      if @extract
-        offsets.each_with_index do |offset, i|
-          @fp.seek(offset)
-          size = read_uint
-          puts("writing " + @sond_filenames[i])
-          File.open(@sond_filenames[i], 'wb') { |audo| audo.write(@fp.read(size)) }
-        end
+      offsets.each_with_index do |offset, i|
+        ai = AudoInfo.new
+        ai.index = i
+        # 'offset' actually points to the size marker first:
+        ai.location = offset + 4
+
+        @fp.seek(offset)
+        ai.size = read_uint
+        @audo_infos[i] = ai
       end
     end
 

@@ -41,9 +41,13 @@ scripts_dir = nil
 resource_file = nil
 colors = !ENV["NO_COLOR"]
 want_version = false
+script_file = "script1.txt"
 
 parser = OptionParser.new do |opts|
   opts.on("--scripts-dir DIRECTORY") { |path| scripts_dir = File.expand_path(path) }
+  opts.on("--script FILE", "Specific script within the scripts-dir") { |name|
+    script_file = name
+  }
   opts.on("--no-color", "Plain text output") { colors = false }
   opts.on("--version", "Show version information") { want_version = true }
 end
@@ -66,7 +70,13 @@ if not File.directory?(scripts_dir)
   exit 1
 end
 
-script = Va11halla::ScriptReader.new(File.join(scripts_dir, "script2.txt"))
+actual_script_path = File.join(scripts_dir, script_file)
+
+if not File.file?(actual_script_path)
+  $stderr.puts("#{PROGNAME}: no such file: #{actual_script_path}")
+end
+
+script = Va11halla::ScriptReader.new(actual_script_path)
 at_exit { script.close }
 script.interpret
 
@@ -83,5 +93,8 @@ script.lines.each do |line|
 
   $stdout.print("\t>>")
   $stdout.flush
-  $stdin.gets.chomp
+  ch = $stdin.gets
+  break unless ch
 end
+
+puts

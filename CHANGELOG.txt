@@ -4,17 +4,18 @@ VA-11 Hall-A Tools ChangeLog
 Version 0.1.0 
 -------------
 
-DATE??? 
+August 25, 2025
 
-- Revitalized the project.
-- The code itself is rearranged to match conventional Ruby source layout,
-  including a new namespace `Va11halla`.
-- IFF parsing and resource extraction is now in its own class.
+- Revitalized the project! The code itself is rearranged to match
+  conventional Ruby source layout, including a new namespace `Va11halla`.
+- IFF decoding is now in its own class, completely separate from resource
+  extraction.
 - STRGs are extracted to a file instead of spamming the standard output.
-- Preliminary interpretation of the SHDR chunk, which will allow isolating
-  shader code for GPUs.
+- Shader code can now be extracted.
 - Preliminary interpretation of the TPAG chunk is in place.
 - Preliminary interpretation of the CODE chunk is in place.
+- For text mode, you can now specify which script to run as a command line
+  option to `va11halla_textmode`.
 
 
 Version 0.0.1

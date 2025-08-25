@@ -29,5 +29,5 @@ require_relative 'va11halla/iff'
 require_relative 'va11halla/reader'
 
 module Va11halla
-  VERSION = "0.0.1a"
+  VERSION = "0.1.0"
 end

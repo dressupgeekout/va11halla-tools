@@ -31,9 +31,9 @@ require 'optparse'
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
 require 'va11halla'
 
-PROGNAME = File.basename($0)
-
 ########## ########## ##########
+
+PROGNAME = File.basename($0)
 
 extract = true
 specific_chunk = nil
@@ -59,6 +59,8 @@ if want_version
   puts "#{PROGNAME} #{Va11halla::VERSION}"
   exit 0
 end
+
+specific_chunk.upcase! if specific_chunk
 
 path = ARGV.shift
 
@@ -86,12 +88,54 @@ data.open
 
 data.parse(**{
   :specific_chunk => specific_chunk,
-  :extract => extract,
   :debug => debug,
 })
 
 if debug
   puts "Total length: #{data.total_length}"
+end
+
+if extract
+  # Extract TXTRs.
+  if specific_chunk == "TXTR" || specific_chunk.nil?
+    data.txtr_infos.each do |ti|
+      puts("writing #{ti.filename}")
+      data.fp.seek(ti.location)
+      File.open(ti.filename, 'wb') { |fp| fp.write(data.fp.read(ti.size)) }
+    end
+  end
+
+  # Extract AUDOs.
+  if specific_chunk == "AUDO" || specific_chunk.nil?
+    data.audo_infos.each do |ai|
+      data.fp.seek(ai.location)
+      filename = data.sond_infos[ai.index].filename
+      puts("writing #{filename}")
+      File.open(filename, 'wb') { |fp| fp.write(data.fp.read(ai.size)) }
+    end
+  end
+
+  # Extract SHDRs.
+  if specific_chunk == "SHDR" || specific_chunk.nil?
+    data.shdr_infos.each_with_index do |si|
+      si.data.each do |datum|
+        data.fp.seek(datum[:location])
+        puts "writing #{datum[:filename]}"
+        File.open(datum[:filename], "wb") { |fp| fp.puts(data.fp.read(datum[:size])) }
+      end
+    end
+  end
+
+  # Extract STRGs.
+  #
+  # Don't create 1 file per string. Instead, we combine them all into a
+  # giant array and write a single file.
+  if specific_chunk == "STRG" || specific_chunk.nil?
+    all_strings = data.strg_infos.map { |si| si.string }
+    filename = "STRG.yaml"
+    puts "writing #{filename}"
+    File.open(filename, "w") { |fp| fp.puts(YAML.dump(all_strings)) }
+  end
 end
 
 data.close
@@ -121,6 +165,13 @@ if debug
   puts "Sond infos:"
   data.sond_infos.each do |si|
     puts("  #{si}")
+  end
+
+  puts
+
+  puts "Audo infos:"
+  data.audo_infos.each do |ai|
+    puts("  #{ai}")
   end
 
   puts
@@ -167,5 +218,12 @@ if debug
   puts "Vari infos:"
   data.vari_infos.each do |vi|
     puts("  #{vi}")
+  end
+
+  puts
+
+  puts "Txtr infos:"
+  data.txtr_infos.each do |ti|
+    puts "  #{ti}"
   end
 end
