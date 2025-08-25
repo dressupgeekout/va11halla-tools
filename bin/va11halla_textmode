@@ -85,7 +85,14 @@ script.lines.each do |line|
 
   line.each do |directive|
     if directive.kind_of?(Va11halla::Instruction)
-      next
+      case directive.name
+      when "SHOW"
+        $stdout.puts("(ENTER #{directive.params[1]})")
+      when "XS"
+        if directive.params[0] =~ /hide$/
+          $stdout.puts("(EXIT #{directive.params[0]})")
+        end
+      end
     elsif directive.kind_of?(Va11halla::Dialogue)
       $stdout.print(directive.text)
     end
