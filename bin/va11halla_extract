@@ -60,6 +60,8 @@ if want_version
   exit 0
 end
 
+specific_chunk.upcase! if specific_chunk
+
 path = ARGV.shift
 
 if not path
@@ -95,7 +97,7 @@ end
 
 if extract
   # Extract TXTRs.
-  if specific_chunk.upcase == "TXTR" || specific_chunk.nil?
+  if specific_chunk == "TXTR" || specific_chunk.nil?
     data.txtr_infos.each do |ti|
       puts("writing #{ti.filename}")
       data.fp.seek(ti.location)
@@ -104,7 +106,7 @@ if extract
   end
 
   # Extract AUDOs.
-  if specific_chunk.upcase == "AUDO" || specific_chunk.nil?
+  if specific_chunk == "AUDO" || specific_chunk.nil?
     data.audo_infos.each do |ai|
       data.fp.seek(ai.location)
       filename = data.sond_infos[ai.index].filename
@@ -114,7 +116,7 @@ if extract
   end
 
   # Extract SHDRs.
-  if specific_chunk.upcase == "SHDR" || specific_chunk.nil?
+  if specific_chunk == "SHDR" || specific_chunk.nil?
     data.shdr_infos.each_with_index do |si|
       si.data.each do |datum|
         data.fp.seek(datum[:location])
@@ -128,7 +130,7 @@ if extract
   #
   # Don't create 1 file per string. Instead, we combine them all into a
   # giant array and write a single file.
-  if specific_chunk.upcase == "STRG" || specific_chunk.nil?
+  if specific_chunk == "STRG" || specific_chunk.nil?
     all_strings = data.strg_infos.map { |si| si.string }
     filename = "STRG.yaml"
     puts "writing #{filename}"
