@@ -235,11 +235,7 @@ module Va11halla
     def bgnd
       @bgnd_count = read_uint32le
       @bgnd_infos = Array.new(@bgnd_count)
-      real_offsets = Array.new(@bgnd_count)
-
-      (0...@bgnd_count).each do |i|
-        real_offsets[i] = read_uint32le
-      end
+      real_offsets = read_n_uint32le(@bgnd_count)
 
       real_offsets.each_with_index do |offset, i|
         bi = BgndInfo.new
@@ -261,11 +257,7 @@ module Va11halla
     def shdr
       @shdr_count = read_uint
       @shdr_infos = Array.new(@shdr_count)
-      real_offsets = Array.new(@shdr_count)
-
-      (0...@shdr_count).each do |i|
-        real_offsets[i] = read_uint
-      end
+      real_offsets = read_n_uint32le(@shdr_count)
 
       real_offsets.each_with_index do |offset, i|
         si = ShdrInfo.new
@@ -306,11 +298,7 @@ module Va11halla
     def room
       @room_count = read_uint32le
       @room_infos = Array.new(@room_count)
-      real_offsets = []
-
-      (0...@room_count).each do |i|
-        real_offsets[i] = read_uint32le
-      end
+      real_offsets = read_n_uint32le(@room_count)
 
       real_offsets.each_with_index do |offset, i|
         ri = RoomInfo.new
@@ -323,11 +311,7 @@ module Va11halla
     def tpag
       @tpag_count = read_uint32le
       @tpag_infos = Array.new(@tpag_count)
-      real_offsets = Array.new(@tpag_count)
-
-      (0...@tpag_count).each do |i|
-        real_offsets[i] = read_uint32le
-      end
+      real_offsets = read_n_uint32le(@tpag_count)
 
       real_offsets.each_with_index do |offset, i|
         ti = TpagInfo.new
@@ -347,12 +331,7 @@ module Va11halla
     def sond
       @sond_count = read_uint
       @sond_infos = Array.new(@sond_count)
-      real_offsets = []
-
-      (0...@sond_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
-      end
+      real_offsets = read_n_uint32le(@sond_count)
 
       p real_offsets if @debug
 
@@ -389,12 +368,7 @@ module Va11halla
     def agrp
       @agrp_count = read_uint
       @agrps = Array.new(@agrp_count)
-      real_offsets = []
-
-      (0...@agrp_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
-      end
+      real_offsets = read_n_uint32le(@agrp_count)
 
       real_offsets.each_with_index do |offset, i|
         @fp.seek(offset)
@@ -410,12 +384,7 @@ module Va11halla
     def sprt
       @sprt_count = read_uint
       @sprt_infos = Array.new(@sprt_count)
-      real_offsets = []
-
-      (0...@sprt_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
-      end
+      real_offsets = read_n_uint32le(@sprt_count)
 
       p real_offsets if @debug
 
@@ -468,11 +437,7 @@ module Va11halla
     def scpt
       @scpt_count = read_uint32le
       @scpt_infos = Array.new(@scpt_count)
-      real_offsets = []
-
-      (0...@scpt_count).each do |i|
-        real_offsets[i] = read_uint32le
-      end
+      real_offsets = read_n_uint32le(@scpt_count)
 
       real_offsets.each_with_index do |offset, i|
         si = ScptInfo.new
@@ -491,12 +456,7 @@ module Va11halla
     def font
       @font_count = read_uint
       @font_infos = Array.new(@font_count)
-      real_offsets = []
-
-      (0...@font_count).each do |i|
-        real_offset = read_uint
-        real_offsets[i] = real_offset
-      end
+      real_offsets = read_n_uint32le(@font_count)
 
       p real_offsets if @debug
 
@@ -529,11 +489,7 @@ module Va11halla
     def code
       @code_count = read_uint
       @code_infos = Array.new(@code_count)
-      real_offsets = []
-
-      (0...@code_count).each do |i|
-        real_offsets[i] = read_uint32le
-      end
+      real_offsets = read_n_uint32le(@code_count)
 
       real_offsets.each_with_index do |offset, i|
         ci = CodeInfo.new
@@ -571,11 +527,7 @@ module Va11halla
     def strg
       @strg_count = read_uint
       @strg_infos = Array.new(@strg_count)
-      real_offsets = []
-
-      (0...@strg_count).each do |i|
-        real_offsets[i] = read_uint
-      end
+      real_offsets = read_n_uint32le(@strg_count)
 
       real_offsets.each_with_index do |real_offset, i|
         si = StrgInfo.new
@@ -594,7 +546,7 @@ module Va11halla
     def txtr(section_end)
       @txtr_count = read_uint
       @txtr_infos = Array.new(@txtr_count)
-      pre_offsets = @fp.read(4*@txtr_count).unpack("L<*")
+      pre_offsets = read_n_uint32le(@txtr_count)
       p pre_offsets if @debug
       read_uint32le # zeroes?
 
@@ -640,7 +592,7 @@ module Va11halla
     def audo
       @audo_count = read_uint
       @audo_infos = Array.new(@audo_count)
-      offsets = @fp.read(@audo_count*4).unpack("L<*")
+      offsets = read_n_uint32le(@audo_count)
 
       p offsets if @debug
 
@@ -704,6 +656,11 @@ module Va11halla
 
     alias read_uint32 read_uint
     alias read_uint32le read_uint
+
+    # Returns the next `n` 4-byte words as an array of unsigned values.
+    def read_n_uint32le(n)
+      return @fp.read(n*4).unpack('L<*')
+    end
 
     def read_chars(length)
       return @fp.read(length)
