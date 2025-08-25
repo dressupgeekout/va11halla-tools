@@ -125,6 +125,13 @@ if debug
 
   puts
 
+  puts "Audo infos:"
+  data.audo_infos.each do |ai|
+    puts("  #{ai}")
+  end
+
+  puts
+
   puts "AGRPs:"
   data.agrps.each do |agrp|
     puts("  - #{agrp}")

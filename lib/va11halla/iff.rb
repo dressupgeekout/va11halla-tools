@@ -87,6 +87,12 @@ module Va11halla
     end
   end
 
+  AudoInfo = Struct.new(:index, :location, :size) do
+    def to_s
+      return ("AUDO %d\tlocation=%d\t%d bytes" % [index, location, size])
+    end
+  end
+
   # This is *not* a general purpose IFF reader. It is optimized specifically
   # for VA-11 Hall-A's use case (and perhaps other games made with Game Maker
   # Studio, too).
@@ -108,7 +114,6 @@ module Va11halla
     attr_reader :total_length
     attr_reader :agrps
     attr_reader :section_lengths
-    attr_reader :sond_filenames
     attr_reader :font_infos
     attr_reader :sond_infos
     attr_reader :tpag_infos
@@ -116,6 +121,7 @@ module Va11halla
     attr_reader :shdr_infos
     attr_reader :code_infos
     attr_reader :txtr_infos
+    attr_reader :audo_infos
     attr_reader :sond_count
     attr_reader :tpag_count
     attr_reader :agrp_count
@@ -166,7 +172,6 @@ module Va11halla
 
       @total_length = read_uint
 
-      @sond_filenames = []
       @section_lengths = {}
 
       while @fp.tell < @total_length
@@ -348,10 +353,6 @@ module Va11halla
         si.filename = read_chars(filename_len)
 
         @sond_infos[i] = si
-
-        if @extract
-          @sond_filenames[i] = si.filename
-        end
       end
     end
 
@@ -602,15 +603,28 @@ module Va11halla
     # an equal number of AUDOs as there are SONDs.
     def audo
       @audo_count = read_uint
+      @audo_infos = Array.new(@audo_count)
       offsets = @fp.read(@audo_count*4).unpack("L<*")
+
       p offsets if @debug
 
+      offsets.each_with_index do |offset, i|
+        ai = AudoInfo.new
+        ai.index = i
+        # 'offset' actually points to the size marker first:
+        ai.location = offset + 4
+
+        @fp.seek(offset)
+        ai.size = read_uint
+        @audo_infos[i] = ai
+      end
+
       if @extract
-        offsets.each_with_index do |offset, i|
-          @fp.seek(offset)
-          size = read_uint
-          puts("writing " + @sond_filenames[i])
-          File.open(@sond_filenames[i], 'wb') { |audo| audo.write(@fp.read(size)) }
+        @audo_infos.each do |ai|
+          @fp.seek(ai.location)
+          filename = @sond_infos[ai.index].filename
+          puts("writing #{filename}")
+          File.open(filename, 'wb') { |f| f.write(@fp.read(ai.size)) }
         end
       end
     end
