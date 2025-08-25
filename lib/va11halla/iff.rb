@@ -63,9 +63,9 @@ module Va11halla
     end
   end
 
-  ShdrInfo = Struct.new(:index, :a, :b, :c, :d, :e) do
+  ShdrInfo = Struct.new(:index, :a, :b, :c, :locs, :e) do
     def to_s
-      return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, d.inspect, e.inspect])
+      return ("SHDR %d %d %d %d\t%s\t%s" % [index, a, b, c, locs.inspect, e.inspect])
     end
   end
 
@@ -241,14 +241,24 @@ module Va11halla
         si.a = read_uint32le
         si.b = read_uint16le
         si.c = read_uint16le
-        si.d = []
-        6.times { si.d << read_uint32le }
+        si.locs = []
+        6.times { si.locs << read_uint32le }
         2.times { read_uint32le } # Zeroes
 
         count = read_uint32le
         si.e = []
         count.times { si.e << read_uint32le }
         @shdr_infos[i] = si
+
+        if @extract
+          si.locs.each_with_index do |loc, j|
+            @fp.seek(loc-4)
+            len = read_uint32
+            filename = sprintf("SHDR_%02d_%02d.txt", i, j)
+            puts "writing #{filename}"
+            File.open(filename, "w") { |fp| fp.puts(read_chars(len)) }
+          end
+        end
       end
     end
 
