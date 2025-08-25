@@ -11,8 +11,7 @@ DATE???
   including a new namespace `Va11halla`.
 - IFF parsing and resource extraction is now in its own class.
 - STRGs are extracted to a file instead of spamming the standard output.
-- Preliminary interpretation of the SHDR chunk, which will allow isolating
-  shader code for GPUs.
+- Preliminary interpretation and extraction of shader code.
 - Preliminary interpretation of the TPAG chunk is in place.
 - Preliminary interpretation of the CODE chunk is in place.
 
