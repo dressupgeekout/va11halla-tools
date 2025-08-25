@@ -100,5 +100,8 @@ script.lines.each do |line|
 
   $stdout.print("\t>>")
   $stdout.flush
-  $stdin.gets.chomp
+  ch = $stdin.gets
+  break unless ch
 end
+
+puts
