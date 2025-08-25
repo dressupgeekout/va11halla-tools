@@ -59,6 +59,11 @@ module Va11halla
     end
   end
 
+  # Parses and tokenizes a single line of text. A typical line represents a
+  # single line of dialogue and one or more additional instructions.
+  #
+  # You typically don't need to use this class directly. Use `ScriptReader`
+  # instead.
   class LineInterpreter
     attr_reader :mode
     attr_reader :raw
@@ -130,6 +135,11 @@ module Va11halla
     end
   end
 
+  # This class associates a raw line of input with the instructions
+  # contained within it.
+  #
+  # You typically don't need to use this class directly. Use `ScriptReader`
+  # instead.
   class Line
     attr_reader :raw
     attr_reader :instructions
@@ -149,6 +159,8 @@ module Va11halla
   class MagicError < RuntimeError
   end
 
+  # The `ScriptReader` parses an entire script. A script typically
+  # corresponds to a single evening at the bar. 
   class ScriptReader
     attr_reader :path
     attr_accessor :file
