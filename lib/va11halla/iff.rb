@@ -69,6 +69,12 @@ module Va11halla
     end
   end
 
+  RoomInfo = Struct.new(:index, :location) do
+    def to_s
+      return ("ROOM %d\tlocation=%d" % [index, location])
+    end
+  end
+
   TpagInfo = Struct.new(:index, :loc) do
     def to_s
       return ("TPAG %d\t%d" % [index, loc])
@@ -123,6 +129,7 @@ module Va11halla
     attr_reader :tpag_infos
     attr_reader :sprt_infos
     attr_reader :shdr_infos
+    attr_reader :room_infos
     attr_reader :code_infos
     attr_reader :txtr_infos
     attr_reader :audo_infos
@@ -133,6 +140,7 @@ module Va11halla
     attr_reader :sprt_count
     attr_reader :scpt_count
     attr_reader :shdr_count
+    attr_reader :room_count
     attr_reader :code_count
     attr_reader :font_count
     attr_reader :code_count
@@ -197,7 +205,7 @@ module Va11halla
         when "OBJT"
           nil
         when "ROOM"
-          nil
+          room
         when "DAFL"
           nil
         when "TPAG"
@@ -276,6 +284,23 @@ module Va11halla
         end
 
         @shdr_infos[i] = si
+      end
+    end
+
+    def room
+      @room_count = read_uint32le
+      @room_infos = Array.new(@room_count)
+      real_offsets = []
+
+      (0...@room_count).each do |i|
+        real_offsets[i] = read_uint32le
+      end
+
+      real_offsets.each_with_index do |offset, i|
+        ri = RoomInfo.new
+        ri.index = i
+        ri.location = offset
+        @room_infos[i] = ri
       end
     end
 
@@ -605,6 +630,7 @@ module Va11halla
         "CODE" => @code_count,
         "FONT" => @font_count,
         "FUNC" => @func_count,
+        "ROOM" => @room_count,
         "SCPT" => @scpt_count,
         "SOND" => @sond_count,
         "SPRT" => @sprt_count,
