@@ -95,7 +95,7 @@ module Va11halla
 
   CodeInfo = Struct.new(:index, :varname, :a, :b, :c, :d) do
     def to_s
-      return ("CODE %d\t%s\t%s" % [index, varname, [a, b, c, d]])
+      return ("CODE %d\t%s\t%s" % [index, varname, [a, b, c, d].inspect])
     end
   end
 
@@ -501,7 +501,7 @@ module Va11halla
         ci.b = read_uint32le
         ci.c = read_uint16le
         ci.d = read_uint16le
-        read_uint32le # Zeroes?
+        read_uint32le # Zeroes
 
         @fp.seek(varname_loc-4)
         varname_len = read_uint32le
