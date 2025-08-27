@@ -57,9 +57,9 @@ module Va11halla
     end
   end
 
-  ScptInfo = Struct.new(:index, :name) do
+  ScptInfo = Struct.new(:index, :name, :a, :b) do
     def to_s
-      return ("SCPT %d\t%s" % [index, name])
+      return ("SCPT %d\t%s\t%d %d" % [index, name, a, b])
     end
   end
 
@@ -445,6 +445,9 @@ module Va11halla
 
         @fp.seek(offset)
         name_loc = read_uint32le
+        si.a = read_uint16le
+        si.b = read_uint16le
+
         @fp.seek(name_loc-4)
         name_len = read_uint32le
         si.name = read_chars(name_len)
